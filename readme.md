@@ -25,3 +25,6 @@ On right click, you can exit the app or see the battery level again.
 
 - [DeveloperX19](https://github.com/DeveloperX19) for the license of his
   intellectual property of the art of the icon.
+
+## License
+MIT: Feel free to use this code as you wish.
