@@ -13,6 +13,8 @@ display it in the system tray.
    - `python3 mouse.py` or
    - Put the `start_mouse.bat` file as a shortcut in your startup folder
      (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
+    - You may need to change the bat script to point to your python installation
+      if you have multiple versions installed or renamed the executable.
 
 ### Thanks to
 
