@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 import os, time, threading
 
 # Our state variables
+last_update = None
 battery_level = None
 icon = None
 stopped = False
@@ -28,12 +29,18 @@ def get_battery():
 
         if battery["level"] is not None:
             # print(f"Mouse got {battery['level']}% juice left")
-            global battery_level, icon
+            global battery_level, icon, last_update
             battery_level = battery["level"]
+            last_update = time.time()
             icon.icon = create_battery_icon()
             icon.menu = pystray.Menu(
                 pystray.MenuItem(
                     f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
+                    lambda: None,
+                ),
+                pystray.MenuItem(
+                    "Last update: "
+                    + time.strftime("%H:%M:%S", time.localtime(last_update)),
                     lambda: None,
                 ),
                 pystray.MenuItem("Quit", quit_app),
@@ -44,6 +51,7 @@ def get_battery():
         else:
             time.sleep(1 / 20)
     print("Stopping thread")
+
 
 # This function creates the system tray icon dynamically
 def create_battery_icon():
@@ -79,11 +87,13 @@ def create_battery_icon():
 
     return image
 
+
 # This function is called when you click on the quit button
 def quit_app(icon, item):
     global stopped
     icon.stop()
     stopped = True
+
 
 # This is the main function, where we initialize the system tray icon and start the thread
 def main():
@@ -101,6 +111,7 @@ def main():
     )
 
     icon.run()
+
 
 # Python boilerplate
 if __name__ == "__main__":
