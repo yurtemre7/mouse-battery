@@ -20,6 +20,10 @@ def get_battery():
     global stopped
     while not stopped:
         mouse = rivalcfg.get_first_mouse()
+        if mouse is None:
+            print("No mouse found")
+            time.sleep(1 / 20)
+            continue
         battery = mouse.battery
 
         if battery["level"] is not None:
