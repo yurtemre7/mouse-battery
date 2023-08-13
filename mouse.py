@@ -15,7 +15,7 @@ time_delta = 60 * 10  # 60s * 10 = 600s = 10min
 directory = f"{os.path.dirname(os.path.realpath(__file__))}/"
 image_directory = f"{directory}images/"
 
-
+# This function is running in a separate thread to get the battery level of your mouse
 def get_battery():
     global stopped
     while not stopped:
@@ -45,7 +45,7 @@ def get_battery():
             time.sleep(1 / 20)
     print("Stopping thread")
 
-
+# This function creates the system tray icon dynamically
 def create_battery_icon():
     global battery_level
     image = Image.new("RGB", (100, 100), color="white")
@@ -79,13 +79,13 @@ def create_battery_icon():
 
     return image
 
-
+# This function is called when you click on the quit button
 def quit_app(icon, item):
     global stopped
     icon.stop()
     stopped = True
 
-
+# This is the main function, where we initialize the system tray icon and start the thread
 def main():
     global icon
     image = create_battery_icon()
@@ -102,6 +102,6 @@ def main():
 
     icon.run()
 
-
+# Python boilerplate
 if __name__ == "__main__":
     main()
