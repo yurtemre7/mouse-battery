@@ -5,7 +5,8 @@ display it in the system tray.
 
 ## Installation
 
-1. Install Python 3 (https://www.python.org/downloads/)
+1. Install Python 3 (https://www.python.org/downloads/) and make sure to check
+   the box to add it to your PATH.
 2. Pip install the following packages:
    - `pip install rivalcfg`
    - `pip install pystray`
