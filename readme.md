@@ -3,6 +3,10 @@
 This is a cool app to retrieve the battery level of your Steelseries mouse and
 display it in the system tray.
 
+## Usage
+Once started, you can hover over the icon to see the battery level.
+On right click, you can exit the app or see the battery level again.
+
 ## Installation
 
 1. Install Python 3 (https://www.python.org/downloads/) and make sure to check
