@@ -8,9 +8,10 @@ mouse and display it in the system tray.
 Once started, you can hover over the icon to see the battery level. On right
 click, you can exit the app or see the battery level again.
 
-# Tested on
+## Tested on
 
 - Steelseries AEROX 3 Wireless (2.4G mode)
+
 
 ## Installation
 0. Download the git repository as a zip file and extract it somewhere (or clone
@@ -26,6 +27,9 @@ click, you can exit the app or see the battery level again.
    - You may need to change the bat script to point to your python installation
      if you have multiple versions installed or renamed the executable.
    - or you can run the script manually: `python3 mouse.py`
+
+## Supported by the `rivalcfg` library
+- [rivalcfg supported devices](https://flozz.github.io/rivalcfg/devices/index.html)
 
 ### Problems?
 
