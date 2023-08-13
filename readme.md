@@ -1,6 +1,6 @@
 ## Steelseries Mouse Battery retrieval
 
-This is a cool app to retrieve the battery level of your Steelseries mouse and
+This is a cool Windows app to retrieve the battery level of your Steelseries mouse and
 display it in the system tray.
 
 ## Usage
