@@ -35,6 +35,8 @@ click, you can exit the app or see the battery level again.
 
 ### Problems?
 
+Firstly look at the `knownissues.md` file in the folder to see if your problem is listed.
+
 Run the script in the `mouse-battery` folder:
 
 ```sh
