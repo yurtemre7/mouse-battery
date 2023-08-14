@@ -30,7 +30,7 @@ def get_battery():
         if battery["level"] is not None:
             # print(f"Mouse got {battery['level']}% juice left")
             global battery_level, icon, last_update
-            battery_level = battery["level"]
+            battery_level = max(min(battery["level"], 100), 0)
             last_update = time.time()
             icon.icon = create_battery_icon()
             icon.menu = pystray.Menu(
@@ -61,7 +61,7 @@ def create_battery_icon():
 
     if battery_level is not None:
         draw.rectangle((0, 0, 100, 100), fill="black")
-        draw.rectangle((0, 100, 100, 100 - battery_level), fill="green")
+        draw.rectangle((0, 100 - battery_level, 100, 100), fill="green")
     else:
         draw.rectangle((0, 0, 100, 100), fill="black")
         error = Image.open(f"{image_directory}error.png")
