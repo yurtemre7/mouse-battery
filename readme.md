@@ -21,6 +21,7 @@ click, you can exit the app or see the battery level again.
 2. Pip install the following packages:
    - `pip install rivalcfg==4.9.1`
    - `pip install pystray==0.19.4`
+   - `pip install pillow==10.0.0`
 3. Run the script
    - Put the `start_mouse.bat` file as a shortcut in your startup folder
      (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
@@ -52,6 +53,7 @@ Sorry to see you go :(
 3. Delete the python libraries installed via pip:
    - `pip uninstall rivalcfg`
    - `pip uninstall pystray`
+   - `pip uninstall pillow`
 4. Uninstall Python 3 if you don't need it anymore
 
 ### Thanks to
