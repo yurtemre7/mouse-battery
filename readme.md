@@ -11,6 +11,8 @@ click, you can exit the app or see the battery level again.
 ## Tested on
 
 - Steelseries AEROX 3 Wireless (2.4G mode)
+- Steelseries Prime Wireless
+- Steelseries AEROX 9 Wireless (2.4G mode)
 
 ## Installation
 
