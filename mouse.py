@@ -20,36 +20,42 @@ image_directory = f"{directory}images/"
 def get_battery():
     global stopped
     while not stopped:
-        mouse = rivalcfg.get_first_mouse()
-        if mouse is None:
-            print("No mouse found")
-            time.sleep(1 / 20)
-            continue
-        battery = mouse.battery
+        try:
+            mouse = rivalcfg.get_first_mouse()
+            # print(f"Mouse found {mouse}")
+            if mouse is None:
+                print("No mouse found")
+                time.sleep(1 / 20)
+                continue
+            
+            battery = mouse.battery
 
-        if battery["level"] is not None:
-            # print(f"Mouse got {battery['level']}% juice left")
-            global battery_level, icon, last_update
-            battery_level = max(min(battery["level"], 100), 0)
-            last_update = time.time()
-            icon.icon = create_battery_icon()
-            icon.menu = pystray.Menu(
-                pystray.MenuItem(
-                    f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
-                    lambda: None,
-                ),
-                pystray.MenuItem(
-                    "Last update: "
-                    + time.strftime("%H:%M:%S", time.localtime(last_update)),
-                    lambda: None,
-                ),
-                pystray.MenuItem("Quit", quit_app),
-            )
-            icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
-            icon.update_menu()
+            if battery["level"] is not None:
+                # print(f"Mouse got {battery['level']}% juice left")
+                global battery_level, icon, last_update
+                battery_level = max(min(battery["level"], 100), 0)
+                last_update = time.time()
+                icon.icon = create_battery_icon()
+                icon.menu = pystray.Menu(
+                    pystray.MenuItem(
+                        f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
+                        lambda: None,
+                    ),
+                    pystray.MenuItem(
+                        "Last update: "
+                        + time.strftime("%H:%M:%S", time.localtime(last_update)),
+                        lambda: None,
+                    ),
+                    pystray.MenuItem("Quit", quit_app),
+                )
+                icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
+                icon.update_menu()
+                time.sleep(time_delta)
+            else:
+                time.sleep(1 / 20)
+        except Exception as e:
+            print(f"Error: {e}\n\nSleeping for {time_delta} seconds...")
             time.sleep(time_delta)
-        else:
-            time.sleep(1 / 20)
     print("Stopping thread")
 
 
