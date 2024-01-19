@@ -22,6 +22,15 @@ ValueError: y1 must be greater than or equal to y0
 
 ---
 
+2. Error:
+```sh
+Battery always N/A?
+```
+<details>
+  <summary>Solution</summary>
+  <p> Reconnect the dongle to your pc, pull it out and put it together and then connect again to your PC via USB. </p>
+  <p> Reason: Connection might have lost info over time idk xD Caching errors</p>
+</details>
 
 
 
