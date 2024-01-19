@@ -21,8 +21,8 @@ click, you can exit the app or see the battery level again.
 1. Install Python 3 (https://www.python.org/downloads/) and make sure to check
    the box to add it to your PATH.
 2. Pip install the following packages:
-   - `pip install rivalcfg==4.9.1`
-   - `pip install pystray==0.19.4`
+   - `pip install rivalcfg==4.11.0`
+   - `pip install pystray==0.19.5`
    - `pip install pillow==10.0.0`
 3. Run the script
    - Put the `start_mouse.bat` file as a shortcut in your startup folder
