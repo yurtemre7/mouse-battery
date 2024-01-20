@@ -14,8 +14,13 @@ click, you can exit the app or see the battery level again.
 - Steelseries Prime Wireless
 - Steelseries AEROX 9 Wireless (2.4G mode)
 
-## Installation
+## Installation 
+0. Download the newest App from the [releases](https://github.com/yurtemre7/mouse-battery/releases/) tab.
+1. Put the `mouse.exe` file in your startup folder 
+   (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
+2. Start the program manually or restart your PC.
 
+## Installation (old)
 0. Download the git repository as a zip file and extract it somewhere (or clone
    it with git)
 1. Install Python 3 (https://www.python.org/downloads/) and make sure to check
@@ -51,6 +56,12 @@ connection mode etc.
 
 ## Uninstall guide
 Sorry to see you go :(
+1. Delete the `mouse.exe` file in your startup folder
+   (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup)
+2. Yeah that's it, lol.
+
+## Uninstall guide (old)
+Sorry to see you go :(
 1. Delete the `mouse-battery` folder
 2. Delete the `start_mouse.bat` file in your startup folder
    (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup)
@@ -64,6 +75,7 @@ Sorry to see you go :(
 
 - [DeveloperX19](https://github.com/DeveloperX19) for the license of his
   intellectual property of the art of the icon.
+- [flozz](https://github.com/flozz) for the `rivalcfg` library and the idea of a standalone python executable. 
 
 ## License
 
