@@ -12,50 +12,60 @@ stopped = False
 
 # Change the time_delta to your liking
 time_delta = 60 * 10  # 60s * 10 = 600s = 10min
+time_error = 60 * 0.2  # 60s * 0.2 = 12s
 
 directory = f"{os.path.dirname(os.path.realpath(__file__))}/"
 image_directory = f"{directory}images/"
 
+
 # This function is running in a separate thread to get the battery level of your mouse
 def get_battery():
-    global stopped
+    global stopped, icon, battery_level, last_update
     while not stopped:
         try:
             mouse = rivalcfg.get_first_mouse()
-            # print(f"Mouse found {mouse}")
+            print(f"Mouse found {mouse}")
             if mouse is None:
                 print("No mouse found")
                 time.sleep(1 / 20)
                 continue
-            
-            battery = mouse.battery
 
-            if battery["level"] is not None:
-                # print(f"Mouse got {battery['level']}% juice left")
-                global battery_level, icon, last_update
-                battery_level = max(min(battery["level"], 100), 0)
-                last_update = time.time()
+            battery = mouse.battery
+            print(f"Mouse battery {battery}")
+
+            if battery is not None:
+                name = mouse.name
+                # print(f"Mouse name {name}")
+                if battery["level"] is not None:
+                    battery_level = max(min(battery["level"], 100), 0)
+                    last_update = time.time()
                 icon.icon = create_battery_icon()
                 icon.menu = pystray.Menu(
+                    pystray.MenuItem(
+                        f"Name: {name}",
+                        lambda: None,
+                    ),
                     pystray.MenuItem(
                         f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
                         lambda: None,
                     ),
                     pystray.MenuItem(
                         "Last update: "
-                        + time.strftime("%H:%M:%S", time.localtime(last_update)),
+                        + time.strftime("%H:%M:%S", time.localtime(last_update))
+                        + f' (next update in {time_delta if battery["level"] is not None else 1 / 20}s)',
                         lambda: None,
                     ),
                     pystray.MenuItem("Quit", quit_app),
                 )
                 icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
                 icon.update_menu()
-                time.sleep(time_delta)
+                time.sleep(time_delta if battery["level"] is not None else 1 / 20)
             else:
+                print("No battery found")
                 time.sleep(1 / 20)
         except Exception as e:
-            print(f"Error: {e}\n\nSleeping for {time_delta} seconds...")
-            time.sleep(time_delta)
+            print(f"Error: {e}\n\nSleeping for {time_error} seconds...")
+            time.sleep(time_error)
     print("Stopping thread")
 
 
@@ -107,15 +117,15 @@ def main():
     image = create_battery_icon()
     icon = pystray.Icon("Battery", icon=image, title="Battery: N/A")
     thread = threading.Thread(target=get_battery)
+    thread.daemon = True
     thread.start()
     icon.menu = pystray.Menu(
         pystray.MenuItem(
-            f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
+            "Looking for mouse and mouse data...",
             lambda: None,
         ),
         pystray.MenuItem("Quit", quit_app),
     )
-
     icon.run()
 
 
