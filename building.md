@@ -17,7 +17,7 @@ To create a standalone executable for distribution, follow these steps:
 
 2. Build the standalone executable with PyInstaller. The --onefile option ensures the output is a single executable file, --noconsole prevents a console window from appearing when the program is run, and --add-data includes the necessary image files:
 
-    `pyinstaller --onefile --noconsole --add-data images:images Steel_battery_status.py`
+    `pyinstaller --onefile --noconsole --add-data images:images mouse.py`
 
 ## 2. Creating an Installer with Inno Setup
 

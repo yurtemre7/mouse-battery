@@ -10,15 +10,15 @@ Compression=lzma
 SolidCompression=yes
 
 [Files]
-Source: "..\dist\Steel_battery_status.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\mouse.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Steelseries Mouse Battery Retrieval"; Filename: "{app}\Steel_battery_status.exe"
+Name: "{group}\Steelseries Mouse Battery Retrieval"; Filename: "{app}\mouse.exe"
 Name: "{group}\Uninstall Steelseries Mouse Battery Retrieval"; Filename: "{uninstallexe}"
-Name: "{commonstartup}\Steelseries Mouse Battery Retrieval"; Filename: "{app}\Steel_battery_status.exe"; Tasks: autostart
+Name: "{commonstartup}\Steelseries Mouse Battery Retrieval"; Filename: "{app}\mouse.exe"; Tasks: autostart
 
 [Run]
-Filename: "{app}\Steel_battery_status.exe"; Description: "Launch the application"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mouse.exe"; Description: "Launch the application"; Flags: nowait postinstall skipifsilent
 
 [Tasks]
 Name: "autostart"; Description: "Start the application when Windows starts"; GroupDescription: "Additional tasks"; Flags: checkedonce

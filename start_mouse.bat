@@ -1,1 +1,1 @@
-start pythonw.exe Steel_battery_status.py
+start pythonw.exe mouse.py

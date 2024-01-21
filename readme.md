@@ -61,7 +61,7 @@ If you encounter any issues, first check the [`knownissues.md`](./knownissues.md
 If your problem is not listed, you can run the script in the `mouse-battery` folder. Note the output of the script and open an issue with the output and your mouse model. Provide additional details, such as whether you have multiple mice connected, your connection mode, etc.
 
 ```sh
-python Steel_battery_status.py
+python mouse.py
 ```
 
 ## Uninstallation
@@ -85,6 +85,7 @@ python Steel_battery_status.py
 
 - [DeveloperX19](https://github.com/DeveloperX19) for the license of his intellectual property of the icon art.
 - [flozz](https://github.com/flozz) for the `rivalcfg` library and the idea of a standalone Python executable.
+- [Pyenb](github.com/Pyenb) for rewrites.
 
 ## License
 
