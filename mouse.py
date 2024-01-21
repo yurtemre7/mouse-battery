@@ -66,6 +66,7 @@ def get_battery():
         except Exception as e:
             print(f"Error: {e}\n\nSleeping for {time_error} seconds...")
             time.sleep(time_error)
+    mouse.close()
     print("Stopping thread")
 
 
