@@ -48,7 +48,7 @@ Once the application is started, you can hover over the icon to see the battery 
 
 ## Building application and installer from source
 
-To build the application yourself, check out [`building.md`](https://github.com/yurtemre7/mouse-battery/blob/master/building.md)
+To build the application yourself, check out [`building.md`](./building.md)
 
 ## Supported Devices
 
@@ -56,7 +56,7 @@ The `rivalcfg` library supports a variety of devices. A complete list of support
 
 ## Troubleshooting
 
-If you encounter any issues, first check the [`knownissues.md`](https://github.com/yurtemre7/mouse-battery/blob/master/knownissues.md) file in the repository to see if your problem is already listed.
+If you encounter any issues, first check the [`knownissues.md`](./knownissues.md) file in the repository to see if your problem is already listed.
 
 If your problem is not listed, you can run the script in the `mouse-battery` folder. Note the output of the script and open an issue with the output and your mouse model. Provide additional details, such as whether you have multiple mice connected, your connection mode, etc.
 
