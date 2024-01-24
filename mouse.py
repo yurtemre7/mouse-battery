@@ -1,5 +1,5 @@
 # Import the essential modules
-import rivalcfg, pystray, os, time, threading, psutil
+import rivalcfg, pystray, os, time, threading
 from PIL import Image, ImageDraw
 
 # Our state variables
@@ -30,15 +30,17 @@ def create_menu(name, battery_level, last_update):
         pystray.MenuItem(
             "Last update: "
             + time.strftime("%H:%M:%S", time.localtime(last_update))
-            + f' (next update in {time_delta if battery_level is not None else 1 / 20}s)',
+            + f" (next update in {time_delta if battery_level is not None else 1 / 20}s)",
             lambda: None,
         ),
         pystray.MenuItem("Quit", quit_app),
     )
 
+
 # Function to load the images
 def load_image(image_name):
     return Image.open(f"{image_directory}{image_name}.png")
+
 
 # Function to get the battery data
 def get_battery():
@@ -54,7 +56,7 @@ def get_battery():
 
             battery = mouse.battery
             battery = mouse.battery
-            
+
             print(f"Mouse battery {battery}")
 
             if battery is not None:
@@ -75,6 +77,7 @@ def get_battery():
             time.sleep(time_error)
     mouse.close()
     print("Stopping thread")
+
 
 # Änderungen in der Funktion create_battery_icon
 def create_battery_icon():
@@ -115,17 +118,9 @@ def quit_app(icon, item):
     icon.stop()
     stopped = True
 
-def check_if_program_is_running():
-    # check if mouse.exe is running
-    for process in psutil.process_iter():
-        if process.name() == "mouse.exe":
-            return True
 
 # This is the main function, where we initialize the system tray icon and start the thread
 def main():
-    if check_if_program_is_running():
-        print("Mouse.exe is running")
-        return
     global icon
     image = create_battery_icon()
     icon = pystray.Icon("Battery", icon=image, title="Battery: N/A")
