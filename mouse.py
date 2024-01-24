@@ -1,8 +1,6 @@
 # Import the essential modules
-import rivalcfg
-import pystray
+import rivalcfg, pystray, os, time, threading
 from PIL import Image, ImageDraw
-import os, time, threading
 
 # Our state variables
 last_update = None
@@ -18,7 +16,31 @@ directory = f"{os.path.dirname(os.path.realpath(__file__))}/"
 image_directory = f"{directory}images/"
 
 
-# This function is running in a separate thread to get the battery level of your mouse
+# Fuction to create the menu
+def create_menu(name, battery_level, last_update):
+    return pystray.Menu(
+        pystray.MenuItem(
+            f"Name: {name}",
+            lambda: None,
+        ),
+        pystray.MenuItem(
+            f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
+            lambda: None,
+        ),
+        pystray.MenuItem(
+            "Last update: "
+            + time.strftime("%H:%M:%S", time.localtime(last_update))
+            + f' (next update in {time_delta if battery_level is not None else 1 / 20}s)',
+            lambda: None,
+        ),
+        pystray.MenuItem("Quit", quit_app),
+    )
+
+# Function to load the images
+def load_image(image_name):
+    return Image.open(f"{image_directory}{image_name}.png")
+
+# Function to get the battery data
 def get_battery():
     global stopped, icon, battery_level, last_update
     while not stopped:
@@ -37,28 +59,11 @@ def get_battery():
 
             if battery is not None:
                 name = mouse.name
-                # print(f"Mouse name {name}")
                 if battery["level"] is not None:
                     battery_level = max(min(battery["level"], 100), 0)
                     last_update = time.time()
                 icon.icon = create_battery_icon()
-                icon.menu = pystray.Menu(
-                    pystray.MenuItem(
-                        f"Name: {name}",
-                        lambda: None,
-                    ),
-                    pystray.MenuItem(
-                        f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
-                        lambda: None,
-                    ),
-                    pystray.MenuItem(
-                        "Last update: "
-                        + time.strftime("%H:%M:%S", time.localtime(last_update))
-                        + f' (next update in {time_delta if battery["level"] is not None else 1 / 20}s)',
-                        lambda: None,
-                    ),
-                    pystray.MenuItem("Quit", quit_app),
-                )
+                icon.menu = create_menu(name, battery_level, last_update)
                 icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
                 icon.update_menu()
                 time.sleep(time_delta if battery["level"] is not None else 1 / 20)
@@ -71,8 +76,7 @@ def get_battery():
     mouse.close()
     print("Stopping thread")
 
-
-# This function creates the system tray icon dynamically
+# Änderungen in der Funktion create_battery_icon
 def create_battery_icon():
     global battery_level
     image = Image.new("RGB", (100, 100), color="white")
@@ -83,17 +87,15 @@ def create_battery_icon():
         draw.rectangle((0, 100 - battery_level, 100, 100), fill="green")
     else:
         draw.rectangle((0, 0, 100, 100), fill="black")
-        error = Image.open(f"{image_directory}error.png")
+        error = load_image("error")
         image.paste(error, (0, 0), error)
 
-    # load image error.png and put on top
     if battery_level is not None and battery_level < 20:
-        error = Image.open(f"{image_directory}error.png")
+        error = load_image("error")
     else:
-        error = Image.open(f"{image_directory}no_error.png")
+        error = load_image("no_error")
     image.paste(error, (0, 0), error)
 
-    # replace color black with transparent
     image = image.convert("RGBA")
     data = image.getdata()
     new_data = []
