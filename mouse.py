@@ -53,6 +53,8 @@ def get_battery():
                 continue
 
             battery = mouse.battery
+            battery = mouse.battery
+            
             print(f"Mouse battery {battery}")
 
             if battery is not None:
@@ -71,6 +73,7 @@ def get_battery():
         except Exception as e:
             print(f"Error: {e}\n\nSleeping for {time_error} seconds...")
             time.sleep(time_error)
+    mouse.close()
     print("Stopping thread")
 
 # Änderungen in der Funktion create_battery_icon
