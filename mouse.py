@@ -31,6 +31,8 @@ def get_battery():
                 continue
 
             battery = mouse.battery
+            battery = mouse.battery
+            
             print(f"Mouse battery {battery}")
 
             if battery is not None:
