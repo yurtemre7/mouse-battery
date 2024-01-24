@@ -1,4 +1,4 @@
 build
 dist
-mouse.spec
-innosetup/SMBR_setup.exe
+*.spec
+innosetup/*.exe
