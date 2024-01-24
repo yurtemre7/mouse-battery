@@ -37,13 +37,7 @@ Once the application is started, you can hover over the icon to see the battery 
 
 1. Download the Git repository as a zip file and extract it somewhere (or clone it with Git).
 2. Install Python 3 (<https://www.python.org/downloads/>) and ensure you check the box to add it to your PATH.
-3. Install the following packages with Pip:
-   - `pip install rivalcfg==4.9.1`
-   - `pip install pystray==0.19.5`
-   - `pip install pillow==10.0.0`
-
-   Alternatively, you can run the `pip install -r requirements.txt` command in the `mouse-battery` folder.
-
+3. Install the following packages via the `pip install -r requirements.txt` command in the `mouse-battery` folder.
 4. Run the script:
    - Place the `start_mouse.bat` file as a shortcut in your startup folder (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
    - You may need to modify the bat script to point to your Python installation if you have multiple versions installed or have renamed the executable.
@@ -78,11 +72,7 @@ python mouse.py
 
 1. Delete the `mouse-battery` folder.
 2. Delete the `start_mouse.bat` file in your startup folder (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
-3. Delete the Python libraries installed via Pip:
-   - `pip uninstall rivalcfg`
-   - `pip uninstall pystray`
-   - `pip uninstall pillow`
-4. Uninstall Python 3 if you no longer need it.
+3. Uninstall Python 3 if you no longer need it.
 
 ## Acknowledgements
 
