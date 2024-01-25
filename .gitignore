@@ -2,3 +2,4 @@ build
 dist
 *.spec
 innosetup/*.exe
+innosetup/*.zip
