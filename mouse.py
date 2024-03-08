@@ -7,6 +7,7 @@ last_update = None
 battery_level = None
 icon = None
 stopped = False
+event = None
 
 # Change the time_delta to your liking
 time_delta = 60 * 10  # 60s * 10 = 600s = 10min
@@ -30,8 +31,8 @@ def create_menu(name, battery_level, last_update):
         pystray.MenuItem(
             "Last update: "
             + time.strftime("%H:%M:%S", time.localtime(last_update))
-            + f" (next update in {time_delta if battery_level is not None else 1 / 20}s)",
-            lambda: None,
+            + f" (click to refresh or wait {time_delta if battery_level is not None else 1 / 20}s)",
+            refresh_connection,
         ),
         pystray.MenuItem("Quit", quit_app),
     )
@@ -43,7 +44,7 @@ def load_image(image_name):
 
 
 # Function to get the battery data
-def get_battery():
+def get_battery(event: threading.Event):
     global stopped, icon, battery_level, last_update
     while not stopped:
         try:
@@ -52,7 +53,7 @@ def get_battery():
             if mouse is None:
                 print("No mouse found")
                 time.sleep(1 / 20)
-                continue
+                raise Exception
 
             battery = mouse.battery
             battery = mouse.battery
@@ -68,7 +69,9 @@ def get_battery():
                 icon.menu = create_menu(name, battery_level, last_update)
                 icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
                 icon.update_menu()
-                time.sleep(time_delta if battery["level"] is not None else 1 / 20)
+                sleeptime = time_delta if battery["level"] is not None else 1 / 20
+                event.clear()
+                event.wait(timeout=sleeptime)
             else:
                 print("No battery found")
                 time.sleep(1 / 20)
@@ -85,18 +88,20 @@ def create_battery_icon():
     image = Image.new("RGB", (100, 100), color="white")
     draw = ImageDraw.Draw(image)
 
-    if battery_level is not None:
-        draw.rectangle((0, 0, 100, 100), fill="black")
-        draw.rectangle((0, 100 - battery_level, 100, 100), fill="green")
-    else:
-        draw.rectangle((0, 0, 100, 100), fill="black")
-        error = load_image("error")
-        image.paste(error, (0, 0), error)
+    draw.rectangle((0, 0, 100, 100), fill="black")
+    error = load_image("no_error")
 
-    if battery_level is not None and battery_level < 20:
+    if battery_level is None:
         error = load_image("error")
+    elif battery_level > 50:
+        draw.rectangle((0, 100 - battery_level, 100, 100), fill="green")
+    elif battery_level > 10:
+        draw.rectangle((0, 100 - battery_level, 100, 100), fill="yellow")
+    elif battery_level <= 10:
+        draw.rectangle((0, 100 - battery_level, 100, 100), fill="red")
     else:
-        error = load_image("no_error")
+        error = load_image("error")
+
     image.paste(error, (0, 0), error)
 
     image = image.convert("RGBA")
@@ -112,6 +117,11 @@ def create_battery_icon():
     return image
 
 
+def refresh_connection():
+    global event
+    event.set()
+
+
 # This function is called when you click on the quit button
 def quit_app(icon, item):
     global stopped
@@ -122,9 +132,12 @@ def quit_app(icon, item):
 # This is the main function, where we initialize the system tray icon and start the thread
 def main():
     global icon
+    global event
+
+    event = threading.Event()
     image = create_battery_icon()
     icon = pystray.Icon("Battery", icon=image, title="Battery: N/A")
-    thread = threading.Thread(target=get_battery)
+    thread = threading.Thread(target=get_battery, args=(event,))
     thread.daemon = True
     thread.start()
     icon.menu = pystray.Menu(
