@@ -78,7 +78,8 @@ python mouse.py
 
 - [DeveloperX19](https://github.com/DeveloperX19) for the license of his intellectual property of the icon art.
 - [flozz](https://github.com/flozz) for the `rivalcfg` library and the idea of a standalone Python executable.
-- [Pyenb](github.com/Pyenb) for rewrites.
+- [Pyenb](https://github.com/Pyenb) for rewrites.
+- [T-solidus-T](https://github.com/T-solidus-T) for improvements to the threads, icon & menu logic.
 
 ## License
 
