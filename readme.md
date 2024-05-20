@@ -19,7 +19,7 @@ This is a handy Windows application that retrieves the battery level of your Ste
 
 Once the application is started, you can hover over the icon to see the battery level. Right-clicking allows you to exit the application or view the battery level again.
 
-## Tested Devices
+## Our Tested/Working Devices
 
 - Steelseries AEROX 3 Wireless (2.4G mode)
 - Steelseries AEROX 9 Wireless (2.4G mode)
