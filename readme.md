@@ -24,6 +24,7 @@ Once the application is started, you can hover over the icon to see the battery 
 - Steelseries AEROX 3 Wireless (2.4G mode)
 - Steelseries AEROX 9 Wireless (2.4G mode)
 - Steelseries Prime Wireless
+- Steelseries Prime Mini Wireless
 
 ## Installation
 
