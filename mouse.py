@@ -5,12 +5,13 @@ from PIL import Image, ImageDraw
 # Our state variables
 last_update = None
 battery_level = None
+battery_charging = None
 icon = None
 stopped = False
 event = None
 
 # Change the time_delta to your liking
-time_delta = 60 * 10  # 60s * 10 = 600s = 10min
+time_delta = 60 * 1  # 60s * 1 = 60s = 1min
 time_error = 60 * 0.2  # 60s * 0.2 = 12s
 
 directory = f"{os.path.dirname(os.path.realpath(__file__))}/"
@@ -18,7 +19,7 @@ image_directory = f"{directory}images/"
 
 
 # Fuction to create the menu
-def create_menu(name, battery_level, last_update):
+def create_menu(name, battery_level, last_update, battery_charging):
     return pystray.Menu(
         pystray.MenuItem(
             f"Name: {name}",
@@ -26,6 +27,13 @@ def create_menu(name, battery_level, last_update):
         ),
         pystray.MenuItem(
             f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
+            lambda: None,
+        ),
+        pystray.MenuItem(
+            (
+                "Status: Charging"
+                if battery_charging else "Status: Discharging"
+            ),
             lambda: None,
         ),
         pystray.MenuItem(
@@ -45,7 +53,7 @@ def load_image(image_name):
 
 # Function to get the battery data
 def get_battery(event: threading.Event):
-    global stopped, icon, battery_level, last_update
+    global stopped, icon, battery_level, last_update, battery_charging
     while not stopped:
         try:
             mouse = rivalcfg.get_first_mouse()
@@ -65,8 +73,11 @@ def get_battery(event: threading.Event):
                 if battery["level"] is not None:
                     battery_level = max(min(battery["level"], 100), 0)
                     last_update = time.time()
+                    battery_charging = battery["is_charging"]
                 icon.icon = create_battery_icon()
-                icon.menu = create_menu(name, battery_level, last_update)
+                icon.menu = create_menu(
+                    name, battery_level, last_update, battery_charging
+                )
                 icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
                 icon.update_menu()
                 sleeptime = time_delta if battery["level"] is not None else 1 / 20
@@ -85,20 +96,27 @@ def get_battery(event: threading.Event):
 # Änderungen in der Funktion create_battery_icon
 def create_battery_icon():
     global battery_level
+    global battery_charging
     image = Image.new("RGB", (100, 100), color="white")
     draw = ImageDraw.Draw(image)
 
     draw.rectangle((0, 0, 100, 100), fill="black")
     error = load_image("no_error")
 
-    if battery_level is None:
-        error = load_image("error")
-    elif battery_level > 50:
-        draw.rectangle((0, 100 - battery_level, 100, 100), fill="green")
-    elif battery_level > 10:
-        draw.rectangle((0, 100 - battery_level, 100, 100), fill="yellow")
-    elif battery_level <= 10:
-        draw.rectangle((0, 100 - battery_level, 100, 100), fill="red")
+    def draw_battery_indicator(color, level):
+        draw.rectangle((0, 0, 100, 100), fill="black")
+        draw.rectangle((0, 100 - level, 100, 100), fill=color)
+
+    if battery_level is not None:
+        if battery_charging:
+            draw_battery_indicator("orange", battery_level)
+        else:
+            if battery_level < 20:
+                draw_battery_indicator("red", battery_level)
+            elif battery_level < 50:
+                draw_battery_indicator("yellow", battery_level)
+            else:
+                draw_battery_indicator("green", battery_level)
     else:
         error = load_image("error")
 
