@@ -81,6 +81,7 @@ python mouse.py
 - [flozz](https://github.com/flozz) for the `rivalcfg` library and the idea of a standalone Python executable.
 - [Pyenb](https://github.com/Pyenb) for rewrites.
 - [T-solidus-T](https://github.com/T-solidus-T) for improvements to the threads, icon & menu logic.
+- [bossman90](https://github.com/bossman90) for the battery charging indicator in the system tray.
 
 ## License
 
