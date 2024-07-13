@@ -68,7 +68,7 @@ python mouse.py
 ### Latest Version
 
 1. Go to the Control Panel and select "Uninstall a program".
-2. Find "Steel_battery_status" in the list and click "Uninstall".
+2. Find "SteelMouse" in the list and click "Uninstall".
 
 ### Older Version
 
