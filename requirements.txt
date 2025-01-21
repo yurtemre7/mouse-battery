@@ -1,3 +1,3 @@
-rivalcfg==4.13.0
+rivalcfg==4.14.0
 pystray==0.19.5
 pillow==10.0.0
