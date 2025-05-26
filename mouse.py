@@ -10,12 +10,32 @@ icon = None
 stopped = False
 event = None
 
-# Change the time_delta to your liking
-time_delta = 60 * 1  # 60s * 1 = 60s = 1min
+# Change the default in the `time_delta.txt` file to change the update interval
+time_delta_default = 60 * 5  # Default to 5 minutes if file is empty
+time_error_retry = 1 / 20  # Retry every 1/20 seconds if an error occurs
+time_delta = time_delta_default
+time_deltas = [60, 300, 600, 1800, 3600]  # 1min, 5min, 10min, 30min, 1h
 time_error = 60 * 0.2  # 60s * 0.2 = 12s
 
 directory = f"{os.path.dirname(os.path.realpath(__file__))}/"
 image_directory = f"{directory}images/"
+
+
+# Function to load the time delta from a file
+def load_time_delta():
+    global time_delta
+    try:
+        with open(f"{directory}time_delta.txt", "r") as f:
+            content = f.read().strip()
+            if content and content.isdigit():
+                time_delta = int(content)
+            else:
+                time_delta = time_delta_default
+            print(f"Time delta loaded: {time_delta} seconds")
+    except FileNotFoundError:
+        print("No time_delta.txt found, using default value.")
+        time_delta = time_delta_default
+
 
 
 # Fuction to create the menu
@@ -24,6 +44,7 @@ def create_menu(name, battery_level, last_update, battery_charging):
         pystray.MenuItem(
             f"Name: {name}",
             lambda: None,
+            radio=False,
         ),
         pystray.MenuItem(
             f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}",
@@ -37,10 +58,23 @@ def create_menu(name, battery_level, last_update, battery_charging):
             lambda: None,
         ),
         pystray.MenuItem(
-            "Last update: "
+            text="Last updated at: "
             + time.strftime("%H:%M:%S", time.localtime(last_update))
-            + f" (click to refresh or wait {time_delta if battery_level is not None else 1 / 20}s)",
-            refresh_connection,
+            + f" (Interval: {time_delta if battery_level is not None else time_error_retry}s)",
+            action=pystray.Menu(
+                *[
+                    pystray.MenuItem(
+                        text=f"{int(t / 60)} minute{'s' if t != 60 else ''}",
+                        action=set_time_delta,
+                        checked=lambda t=t: t == time_delta,
+                        default=(
+                            t == time_delta
+                        ),
+                        radio=True,
+                    )
+                    for t in time_deltas
+                ],
+            ),
         ),
         pystray.MenuItem("Quit", quit_app),
     )
@@ -54,13 +88,14 @@ def load_image(image_name):
 # Function to get the battery data
 def get_battery(event: threading.Event):
     global stopped, icon, battery_level, last_update, battery_charging
+    mouse = None
     while not stopped:
         try:
             mouse = rivalcfg.get_first_mouse()
             print(f"Mouse found {mouse}")
             if mouse is None:
                 print("No mouse found")
-                time.sleep(1 / 20)
+                time.sleep(time_error_retry)
                 raise Exception
 
             battery = mouse.battery
@@ -74,26 +109,30 @@ def get_battery(event: threading.Event):
                     battery_level = max(min(battery["level"], 100), 0)
                     last_update = time.time()
                     battery_charging = battery["is_charging"]
-                icon.icon = create_battery_icon()
-                icon.menu = create_menu(
-                    name, battery_level, last_update, battery_charging
-                )
-                icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
-                icon.update_menu()
-                sleeptime = time_delta if battery["level"] is not None else 1 / 20
+                if icon is not None:
+                    icon.icon = create_battery_icon()
+                    icon.menu = create_menu(
+                        name, battery_level, last_update, battery_charging
+                    )
+                    icon.title = f"Battery: {str(f'{battery_level}%' if battery_level is not None else 'N/A')}"
+                    icon.update_menu()
+                load_time_delta()
+                sleeptime = time_delta if battery["level"] is not None else time_error_retry
                 event.clear()
                 event.wait(timeout=sleeptime)
             else:
                 print("No battery found")
-                time.sleep(1 / 20)
+                time.sleep(time_error_retry)
         except Exception as e:
             print(f"Error: {e}\n\nSleeping for {time_error} seconds...")
             time.sleep(time_error)
-    mouse.close()
+    
+    if mouse is not None:
+        mouse.close()
     print("Stopping thread")
 
 
-# Änderungen in der Funktion create_battery_icon
+# Create the battery icon based on the battery level and charging status
 def create_battery_icon():
     global battery_level
     global battery_charging
@@ -124,6 +163,9 @@ def create_battery_icon():
 
     image = image.convert("RGBA")
     data = image.getdata()
+    if data is None:
+        print("No data found in image, returning empty image.")
+        return image
     new_data = []
     for item in data:
         if item[0] == 0 and item[1] == 0 and item[2] == 0:
@@ -135,8 +177,30 @@ def create_battery_icon():
     return image
 
 
+# Function to refresh the connection
+# Legacy used to force an update
 def refresh_connection():
     global event
+    if event is None:
+        print("Event is None, cannot refresh connection.")
+        return
+    event.set()
+
+
+# This function is called when you click to change the time delta
+def set_time_delta(icon, item):
+    global event
+    if event is None:
+        print("Event is None, cannot set time delta.")
+        return
+    global time_delta
+    new_time_delta = int(item.text.split(" ")[0]) * 60
+    print(f"Setting time delta to {new_time_delta} seconds.")
+    time_delta = new_time_delta
+    print(f"Time delta set to {time_delta} seconds.")
+    # save the value to a file or config if needed
+    with open(f"{directory}time_delta.txt", "w+") as f:
+        f.write(str(time_delta))
     event.set()
 
 
