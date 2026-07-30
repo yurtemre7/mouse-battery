@@ -25,6 +25,10 @@ struct Args {
     /// Enable mock mouse mode for testing/debugging
     #[arg(short, long, env = "MOCK_MOUSE")]
     mock: bool,
+
+    /// Print detailed HID diagnostic report of all connected SteelSeries devices
+    #[arg(short, long)]
+    dump_hid: bool,
 }
 
 enum AppMessage {
@@ -33,6 +37,52 @@ enum AppMessage {
 
 fn main() {
     let args = Args::parse();
+
+    if args.dump_hid {
+        println!("=== SteelMouse HID Diagnostic Dump ===");
+        if let Ok(api) = hidapi::HidApi::new() {
+            let mut count = 0;
+            for dev_info in api.device_list() {
+                if dev_info.vendor_id() == 0x1038 {
+                    count += 1;
+                    println!(
+                        "\n[{}] SteelSeries Device: PID=0x{:04x}, Interface={}, Path={:?}, Product={:?}",
+                        count,
+                        dev_info.product_id(),
+                        dev_info.interface_number(),
+                        dev_info.path(),
+                        dev_info.product_string()
+                    );
+                    if let Ok(device) = dev_info.open_device(&api) {
+                        for &cmd in &[0xD2u8, 0x92u8, 0xAAu8] {
+                            let mut req = [0u8; 64];
+                            req[0] = 0x00;
+                            req[1] = cmd;
+                            if cmd == 0xAA {
+                                req[2] = 0x01;
+                            }
+                            let write_res = device.write(&req);
+                            let mut res = [0u8; 64];
+                            let read_res = device.read_timeout(&mut res, 300);
+
+                            println!(
+                                "  Cmd 0x{:02X}: write={:?}, read={:?}, bytes={:?}",
+                                cmd,
+                                write_res,
+                                read_res.as_ref().map(|l| *l),
+                                read_res.as_ref().map(|&l| &res[..l.min(16)]).unwrap_or(&[])
+                            );
+                        }
+                    }
+                }
+            }
+            if count == 0 {
+                println!("No SteelSeries USB HID devices detected.");
+            }
+        }
+        return;
+    }
+
     let mut config = AppConfig::load();
 
     println!("Starting SteelMouse v2.0.0 (Rust)...");
@@ -45,14 +95,11 @@ fn main() {
     let (tx, rx): (Sender<AppMessage>, Receiver<AppMessage>) = channel();
     let tx_clone = tx.clone();
 
-    // Signal channel to wake background thread instantly on interval/setting changes
     let (wake_tx, wake_rx): (Sender<()>, Receiver<()>) = channel();
 
-    // Shared state between polling thread and main loop
     let current_config = Arc::new(Mutex::new(config.clone()));
     let config_polling = current_config.clone();
 
-    // Spawn background HID battery polling thread
     let mock_flag = args.mock;
     thread::spawn(move || {
         let mut mouse_manager = MouseManager::new(mock_flag);
@@ -65,13 +112,12 @@ fn main() {
             let _ = tx_clone.send(AppMessage::BatteryUpdated(result, timestamp));
 
             let sleep_secs = if is_error {
-                12 // Fast retry on error (12s)
+                12
             } else {
                 let cfg = config_polling.lock().unwrap();
                 cfg.time_delta
             };
 
-            // Wait in 1-second ticks or wake up immediately if wake signal is received
             let mut elapsed = 0u64;
             while elapsed < sleep_secs {
                 if wake_rx.recv_timeout(Duration::from_secs(1)).is_ok() {
@@ -79,7 +125,6 @@ fn main() {
                     break;
                 }
                 elapsed += 1;
-                // Re-evaluate target in case time_delta was shortened
                 let current_target = {
                     let cfg = config_polling.lock().unwrap();
                     cfg.time_delta
@@ -91,7 +136,6 @@ fn main() {
         }
     });
 
-    // Create initial tray icon & menu
     let initial_icon = create_tray_icon(None, false, config.display_mode);
     let tray_menu = TrayMenu::new(None, None, config.time_delta, config.display_mode);
 
@@ -115,7 +159,6 @@ fn main() {
             std::time::Instant::now() + Duration::from_millis(100),
         );
 
-        // Process incoming battery status messages
         while let Ok(AppMessage::BatteryUpdated(battery_res, timestamp)) = rx.try_recv() {
             let (info_opt, is_charging, level_opt) = match &battery_res {
                 Ok(info) => {
@@ -131,7 +174,6 @@ fn main() {
             last_battery_info = info_opt.clone();
             last_timestamp = Some(timestamp.clone());
 
-            // Update dynamic tray icon
             let new_icon = create_tray_icon(level_opt, is_charging, config.display_mode);
             if let Some(tray) = tray_icon.as_mut() {
                 let _ = tray.set_icon(Some(new_icon));
@@ -142,7 +184,6 @@ fn main() {
                 let _ = tray.set_tooltip(Some(tooltip));
             }
 
-            // Update context menu
             tray_menu.update(
                 info_opt.as_ref(),
                 Some(&timestamp),
@@ -151,7 +192,6 @@ fn main() {
             );
         }
 
-        // Process menu events
         while let Ok(event) = menu_event_receiver.try_recv() {
             if event.id == tray_menu.quit_item.id() {
                 println!("Quit requested. Exiting...");
@@ -198,10 +238,9 @@ fn main() {
                 let _ = wake_tx.send(());
             }
 
-            // Check interval menu items
             for (&seconds, item) in &tray_menu.interval_items {
                 if event.id == item.id() {
-                    println!("Changing interval to {} seconds ({:?})", seconds, item.id());
+                    println!("Changing interval to {} seconds", seconds);
                     config.time_delta = seconds;
                     config.save();
                     *current_config.lock().unwrap() = config.clone();
@@ -218,7 +257,6 @@ fn main() {
             }
         }
 
-        // Drain tray icon click events
         while let Ok(_event) = tray_event_receiver.try_recv() {}
     });
 }

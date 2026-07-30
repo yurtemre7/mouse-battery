@@ -4,7 +4,7 @@ use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
 const CHARGING_FLAG: u8 = 0x80;
-const READ_TIMEOUT_MS: i32 = 300;
+const READ_TIMEOUT_MS: i32 = 200;
 
 #[derive(Debug, Clone)]
 pub struct BatteryInfo {
@@ -47,20 +47,20 @@ fn get_interface_number(info: &DeviceInfo) -> i32 {
         return info.interface_number();
     }
     
-    // Parse interface/collection number from Windows device path (e.g. "\\?\hid#vid_1038&pid_1838&mi_03#...")
+    // Parse interface number from Windows device path string (e.g. &mi_03 or &col03)
     let path_str = info.path().to_string_lossy().to_lowercase();
-    if let Some(pos) = path_str.find("mi_") {
-        let rest = &path_str[pos + 3..];
-        let num_str: String = rest.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
-        if let Ok(num) = i32::from_str_radix(&num_str, 16) {
-            return num;
+    if let Some(pos) = path_str.find("&mi_") {
+        if path_str.len() >= pos + 6 {
+            if let Ok(num) = i32::from_str_radix(&path_str[pos + 4..pos + 6], 16) {
+                return num;
+            }
         }
     }
-    if let Some(pos) = path_str.find("col") {
-        let rest = &path_str[pos + 3..];
-        let num_str: String = rest.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
-        if let Ok(num) = i32::from_str_radix(&num_str, 16) {
-            return num;
+    if let Some(pos) = path_str.find("&col") {
+        if path_str.len() >= pos + 6 {
+            if let Ok(num) = i32::from_str_radix(&path_str[pos + 4..pos + 6], 16) {
+                return num;
+            }
         }
     }
     -1
@@ -132,7 +132,7 @@ impl MouseManager {
 
                 if let Some(prof) = profile {
                     if let Some(kind) = prof.battery_kind {
-                        // Filter interfaces by endpoint matching
+                        // Skip non-matching interfaces (e.g. interface 0 mouse cursor input)
                         let iface = get_interface_number(device_info);
                         if prof.endpoint != 0 && iface >= 0 && iface != prof.endpoint as i32 {
                             continue;
@@ -181,91 +181,60 @@ impl MouseManager {
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
         match kind {
             BatteryKind::AeroxPrime { command } => {
-                let pkt = [0x00, command];
+                let mut req = [0u8; 64];
+                req[0] = 0x00;
+                req[1] = command;
 
-                if device.write(&pkt).is_err() {
-                    if device.send_feature_report(&pkt).is_err() {
-                        let feat_pkt = [0x02, command];
-                        if device.send_feature_report(&feat_pkt).is_err() {
-                            return None;
-                        }
+                if device.write(&req).is_err() {
+                    let mut feat_req = [0u8; 64];
+                    feat_req[0] = 0x02;
+                    feat_req[1] = command;
+                    if device.send_feature_report(&feat_req).is_err() {
+                        return None;
                     }
                 }
 
                 let mut res = [0u8; 64];
                 if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
                     if read_len >= 2 {
-                        return Self::decode_aerox_prime_battery(&res[..read_len]);
+                        let is_charging = (res[1] & CHARGING_FLAG) != 0;
+                        let raw_val = res[1] & !CHARGING_FLAG;
+                        let level = if raw_val > 0 {
+                            Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
+                        } else {
+                            None
+                        };
+                        return Some((level, is_charging));
                     }
                 }
             }
             BatteryKind::Rival3Or650 => {
-                let pkt = [0x00, 0xAA, 0x01];
+                let mut req = [0u8; 64];
+                req[0] = 0x00;
+                req[1] = 0xAA;
+                req[2] = 0x01;
 
-                if device.write(&pkt).is_err() {
-                    if device.send_feature_report(&pkt).is_err() {
-                        let feat_pkt = [0x02, 0xAA, 0x01];
-                        if device.send_feature_report(&feat_pkt).is_err() {
-                            return None;
-                        }
+                if device.write(&req).is_err() {
+                    let mut feat_req = [0u8; 64];
+                    feat_req[0] = 0x02;
+                    feat_req[1] = 0xAA;
+                    feat_req[2] = 0x01;
+                    if device.send_feature_report(&feat_req).is_err() {
+                        return None;
                     }
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                    if read_len >= 2 {
-                        return Self::decode_rival3_650_battery(&res[..read_len]);
+                if let Ok(read_len) = device.read_timeout(&mut res, 500) {
+                    if read_len >= 3 {
+                        let level = Some(res[0].min(100));
+                        let is_charging = res[2] != 0;
+                        return Some((level, is_charging));
                     }
                 }
             }
         }
         None
-    }
-
-    fn decode_aerox_prime_battery(res: &[u8]) -> Option<(Option<u8>, bool)> {
-        if res.len() < 2 {
-            return None;
-        }
-
-        // On Windows hidapi, res[0] is Report ID 0x00, res[1] is data[0] (status byte 0x15), res[2] is data[1] (battery byte)
-        // rivalcfg uses data[1] strictly for battery level: ((data[1] & ~0x80) - 1) * 5
-        let battery_byte = if res[0] == 0x00 && res.len() >= 3 {
-            res[2]
-        } else {
-            res[1]
-        };
-
-        if battery_byte == 0 {
-            return None;
-        }
-
-        let is_charging = (battery_byte & CHARGING_FLAG) != 0;
-        let raw_val = battery_byte & !CHARGING_FLAG;
-        let level = if raw_val > 0 {
-            Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
-        } else {
-            None
-        };
-
-        Some((level, is_charging))
-    }
-
-    fn decode_rival3_650_battery(res: &[u8]) -> Option<(Option<u8>, bool)> {
-        if res.len() < 2 {
-            return None;
-        }
-
-        let (level_byte, charging_byte) = if res[0] == 0x00 && res.len() >= 4 {
-            (res[1], res[3])
-        } else if res.len() >= 3 {
-            (res[0], res[2])
-        } else {
-            (res[0], 0)
-        };
-
-        let level = Some(level_byte.min(100));
-        let is_charging = charging_byte != 0;
-        Some((level, is_charging))
     }
 
     fn query_generic_fallback(device: &HidDevice) -> Option<(Option<u8>, bool)> {
