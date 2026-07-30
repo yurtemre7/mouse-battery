@@ -45,10 +45,9 @@ jobs:
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'innosetup\setup_python.iss'
         shell: powershell
 
-      - name: Stage Python Artifacts
+      - name: Stage Python Installer Artifact
         run: |
           mkdir staging
-          copy dist\mouse.exe staging\mouse.exe
           copy innosetup\SteelMouse_Python_Setup.exe staging\SteelMouse_Python_Setup.exe
         shell: powershell
 
@@ -84,10 +83,9 @@ jobs:
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'innosetup\setup_rust.iss'
         shell: powershell
 
-      - name: Stage Rust Windows Artifacts
+      - name: Stage Rust Windows Installer Artifact
         run: |
           mkdir staging
-          copy steelmouse_rust\target\x86_64-pc-windows-msvc\release\steelmouse.exe staging\steelmouse.exe
           copy innosetup\SteelMouse_Rust_Setup.exe staging\SteelMouse_Rust_Setup.exe
         shell: powershell
 
@@ -149,7 +147,7 @@ jobs:
             RAW_MSG="${{ github.event.head_commit.message }}"
             TAG_NAME=$(echo "$RAW_MSG" | sed -n 's/^release:\s*//p' | head -n1 | tr -d ' ')
             if [ -z "$TAG_NAME" ]; then
-              TAG_NAME="v2.0.3"
+              TAG_NAME="v2.0.4"
             fi
           fi
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
