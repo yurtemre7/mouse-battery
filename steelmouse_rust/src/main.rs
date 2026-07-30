@@ -87,7 +87,7 @@ fn main() {
 
     let mut config = AppConfig::load();
 
-    println!("Starting SteelMouse v2.0.4 (Rust)...");
+    println!("Starting SteelMouse v2.0.5 (Rust)...");
     if args.mock {
         println!("Running in MOCK mode!");
     }
