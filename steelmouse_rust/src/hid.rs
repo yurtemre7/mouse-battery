@@ -4,7 +4,7 @@ use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
 const CHARGING_FLAG: u8 = 0x80;
-const READ_TIMEOUT_MS: i32 = 200;
+const READ_TIMEOUT_MS: i32 = 50;
 
 #[derive(Debug, Clone)]
 pub struct BatteryInfo {
@@ -47,20 +47,20 @@ fn get_interface_number(info: &DeviceInfo) -> i32 {
         return info.interface_number();
     }
     
-    // Parse interface number from Windows device path string (e.g. &mi_03 or &col03)
+    // Parse interface number from Windows device path string (e.g. mi_03 or &mi_03 or col03)
     let path_str = info.path().to_string_lossy().to_lowercase();
-    if let Some(pos) = path_str.find("&mi_") {
-        if path_str.len() >= pos + 6 {
-            if let Ok(num) = i32::from_str_radix(&path_str[pos + 4..pos + 6], 16) {
-                return num;
-            }
+    if let Some(pos) = path_str.find("mi_") {
+        let rest = &path_str[pos + 3..];
+        let num_str: String = rest.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+        if let Ok(num) = i32::from_str_radix(&num_str, 16) {
+            return num;
         }
     }
-    if let Some(pos) = path_str.find("&col") {
-        if path_str.len() >= pos + 6 {
-            if let Ok(num) = i32::from_str_radix(&path_str[pos + 4..pos + 6], 16) {
-                return num;
-            }
+    if let Some(pos) = path_str.find("col") {
+        let rest = &path_str[pos + 3..];
+        let num_str: String = rest.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+        if let Ok(num) = i32::from_str_radix(&num_str, 16) {
+            return num;
         }
     }
     -1
@@ -99,7 +99,7 @@ impl MouseManager {
             });
         }
 
-        // 1. Try polling existing open cached device handle
+        // 1. Try polling existing open cached device handle (<1ms instantaneous query)
         if let Some(active) = &self.cached_device {
             if let Some((level, is_charging)) = Self::query_device_battery(&active.device, active.kind) {
                 return Ok(BatteryInfo {
@@ -132,7 +132,7 @@ impl MouseManager {
 
                 if let Some(prof) = profile {
                     if let Some(kind) = prof.battery_kind {
-                        // Skip non-matching interfaces (e.g. interface 0 mouse cursor input)
+                        // Fast filter: skip non-matching interfaces to prevent OS driver locks and 500ms timeouts
                         let iface = get_interface_number(device_info);
                         if prof.endpoint != 0 && iface >= 0 && iface != prof.endpoint as i32 {
                             continue;
@@ -225,7 +225,7 @@ impl MouseManager {
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, 500) {
+                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
                     if read_len >= 3 {
                         let level = Some(res[0].min(100));
                         let is_charging = res[2] != 0;
