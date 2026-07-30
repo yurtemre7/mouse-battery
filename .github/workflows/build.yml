@@ -124,6 +124,8 @@ jobs:
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -133,9 +135,9 @@ jobs:
           body: "Release including both Rust (recommended) and Python builds for SteelMouse."
           generate_release_notes: true
           files: |
-            SteelMouse-Python-Windows/SteelMouse_Python_Setup.exe
-            SteelMouse-Python-Windows/mouse.exe
-            SteelMouse-Rust-Windows/SteelMouse_Rust_Setup.exe
-            SteelMouse-Rust-Windows/steelmouse.exe
-            SteelMouse-Rust-macOS/steelmouse-macos-arm64
-            SteelMouse-Rust-macOS/steelmouse-macos-x64
+            SteelMouse_Python_Setup.exe
+            mouse.exe
+            SteelMouse_Rust_Setup.exe
+            steelmouse.exe
+            steelmouse-macos-arm64
+            steelmouse-macos-x64
