@@ -11,6 +11,7 @@ pub struct TrayMenu {
     pub battery_item: MenuItem,
     pub status_item: MenuItem,
     pub last_update_item: MenuItem,
+    pub refresh_item: MenuItem,
     pub interval_submenu: Submenu,
     pub interval_items: HashMap<u64, CheckMenuItem>,
     pub mode_submenu: Submenu,
@@ -57,7 +58,10 @@ impl TrayMenu {
         );
         let last_update_item = MenuItem::new(&last_update_text, false, None);
 
-        // 2. Interactive Refresh Interval Submenu (Static Header)
+        // 2. Manual Refresh Action
+        let refresh_item = MenuItem::new("Refresh Now", true, None);
+
+        // 3. Interactive Refresh Interval Submenu (Static Header)
         let interval_submenu = Submenu::new("Refresh interval", true);
 
         let intervals = vec![
@@ -75,7 +79,7 @@ impl TrayMenu {
             interval_items.insert(seconds, item);
         }
 
-        // 3. Interactive Display Mode Submenu (Static Header)
+        // 4. Interactive Display Mode Submenu (Static Header)
         let mode_submenu = Submenu::new("Tray battery display", true);
         let mode_hover_item = CheckMenuItem::new(
             "Hover for percentage",
@@ -93,7 +97,7 @@ impl TrayMenu {
         mode_submenu.append(&mode_hover_item).unwrap();
         mode_submenu.append(&mode_icon_item).unwrap();
 
-        // 4. Quit Option
+        // 5. Quit Option
         let quit_item = MenuItem::new("Quit", true, None);
 
         // Build Menu Hierarchy
@@ -101,6 +105,7 @@ impl TrayMenu {
         menu.append(&battery_item).unwrap();
         menu.append(&status_item).unwrap();
         menu.append(&last_update_item).unwrap();
+        menu.append(&refresh_item).unwrap();
         menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&interval_submenu).unwrap();
         menu.append(&mode_submenu).unwrap();
@@ -113,6 +118,7 @@ impl TrayMenu {
             battery_item,
             status_item,
             last_update_item,
+            refresh_item,
             interval_submenu,
             interval_items,
             mode_submenu,
@@ -156,7 +162,8 @@ impl TrayMenu {
             last_updated.unwrap_or("--:--:--")
         ));
 
-        // Re-enable and update checkmarks on interactive submenus
+        // Re-enable interactive items & submenus
+        self.refresh_item.set_enabled(true);
         self.interval_submenu.set_enabled(true);
         self.mode_submenu.set_enabled(true);
 

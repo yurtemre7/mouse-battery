@@ -87,7 +87,7 @@ fn main() {
 
     let mut config = AppConfig::load();
 
-    println!("Starting SteelMouse v2.0.5 (Rust)...");
+    println!("Starting SteelMouse v2.0.6 (Rust)...");
     if args.mock {
         println!("Running in MOCK mode!");
     }
@@ -202,7 +202,10 @@ fn main() {
                 return;
             }
 
-            if event.id == tray_menu.mode_hover_item.id() {
+            if event.id == tray_menu.refresh_item.id() {
+                println!("Manual refresh requested!");
+                let _ = wake_tx.send(());
+            } else if event.id == tray_menu.mode_hover_item.id() {
                 config.display_mode = DisplayMode::Hover;
                 config.save();
                 *current_config.lock().unwrap() = config.clone();

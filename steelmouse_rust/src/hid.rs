@@ -99,7 +99,7 @@ impl MouseManager {
             });
         }
 
-        // 1. Try polling existing open cached device handle
+        // 1. Try polling existing open cached device handle (query twice back-to-back)
         if let Some(active) = &self.cached_device {
             if let Some((level, is_charging)) = Self::query_device_battery(&active.device, active.kind) {
                 return Ok(BatteryInfo {
@@ -179,22 +179,17 @@ impl MouseManager {
     }
 
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
-        // First query attempt
+        // Query 1: Send initial request to wake up mouse firmware / 2.4GHz receiver payload buffer
         let first = Self::query_device_battery_once(device, kind);
-        
-        // Small 20ms delay to allow mouse/receiver firmware to update payload buffer
-        std::thread::sleep(std::time::Duration::from_millis(20));
-        
-        // Second query attempt for fresh status
+
+        // 50ms pause to ensure firmware has processed the request and updated the battery register
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        // Query 2: Fetch guaranteed fresh battery level
         let second = Self::query_device_battery_once(device, kind);
 
-        match (first, second) {
-            (_, Some((Some(lvl), chg))) => Some((Some(lvl), chg)),
-            (Some((Some(lvl), chg)), _) => Some((Some(lvl), chg)),
-            (_, Some(second_info)) => Some(second_info),
-            (Some(first_info), _) => Some(first_info),
-            (None, None) => None,
-        }
+        // Prefer fresh second query result, fallback to first if second failed
+        second.or(first)
     }
 
     fn query_device_battery_once(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
