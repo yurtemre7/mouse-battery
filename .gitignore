@@ -1,7 +1,31 @@
-build
-dist
-*.spec
-innosetup/*.exe
-innosetup/*.zip
+# Rust build artifacts
+target/
+steelmouse_rust/target/
+steelmouse_rust/src/rivalcfg_devices.json
+
+# Python virtual environment & cache
+.venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# PyInstaller & build outputs
+build/
+dist/
+*.spec
+
+# Inno Setup output
+innosetup/*.exe
+innosetup/*.zip
+innosetup/Output/
+
+# App local runtime state files
+display_mode.txt
+time_delta.txt
+
+# OS & IDE metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

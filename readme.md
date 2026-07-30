@@ -1,94 +1,82 @@
-# SteelMouse
+# SteelMouse ⚡
 
-This is a handy Windows application that retrieves the battery level of your Steelseries mouse and displays it in the system tray.
+**SteelMouse** is a lightweight, cross-platform system tray application (Windows & macOS) that retrieves the battery level and charging status of your SteelSeries gaming mouse and displays it directly in your taskbar / menu bar.
 
-![System Tray Image of the App SteelMouse](assets/image.png)
+![System Tray Image of SteelMouse](assets/image.png)
 
-## Website
-[SteelMouse Website](https://www.yurtemre.de/steelmouse)
+## 🌟 Key Features
 
-## Table of Contents
+- **⚡ Ultra-Lightweight & Fast**: Rewritten natively in **Rust** (~2.1 MB executable, <10 MB RAM, <10 ms startup time).
+- **🖥️ Cross-Platform**: Supports **Windows** (Win32 Tray) and **macOS** (Apple Silicon & Intel Menu Bar).
+- **🎨 Dual Display Modes**:
+  - **Hover Mode**: Clean battery graphic indicator in system tray with percentage tooltip.
+  - **Icon Mode**: Dynamic percentage numbers drawn directly onto the system tray icon.
+- **🔄 Configurable Refresh Interval**: Select refresh rate (1 min, 5 min, 10 min, 30 min, 1 hr) with instant zero-latency updates.
+- **🖱️ 76+ Devices Supported**: Includes device configurations and USB HID battery parsing rules from [`flozz/rivalcfg`](https://github.com/flozz/rivalcfg).
 
-- [Usage](#usage)
-- [Tested Devices](#tested-devices)
-- [Installation](#installation)
-  - [Latest Version (Recommended)](#latest-version-recommended)
-- [Building from Source](#building-application-and-installer-from-source)
-- [Supported Devices](#supported-devices)
-- [Troubleshooting](#troubleshooting)
-- [Uninstallation](#uninstallation)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
+---
 
-## Usage
+## 💻 Tested & Working Devices
 
-Once the application is started, you can hover over the icon to see the battery level. If you prefer, right-click the tray icon and switch **Tray battery display** to **Show percentage on icon** to display the number directly on the system tray icon. You can switch back to hover-only at any time.
+- SteelSeries Aerox 3 Wireless (Wired & 2.4G mode)
+- SteelSeries Aerox 5 Wireless (Wired & 2.4G mode)
+- SteelSeries Aerox 9 Wireless (Wired & 2.4G mode)
+- SteelSeries Prime Wireless & Prime Mini Wireless
+- SteelSeries Rival 3 Wireless (Gen 1 & Gen 2)
+- SteelSeries Rival 650 Wireless
 
-## Our Tested/Working Devices
+---
 
-- Steelseries AEROX 3 Wireless (2.4G mode)
-- Steelseries AEROX 5 Wireless (2.4G mode)
-- Steelseries AEROX 9 Wireless (2.4G mode)
-- Steelseries Prime Wireless
-- Steelseries Prime Mini Wireless
+## 🚀 Installation
 
-## Installation
+### Windows (Recommended)
+1. Download the latest installer `SteelMouse_Rust_Setup.exe` from the [Releases](https://github.com/yurtemre7/mouse-battery/releases/) page.
+2. Run the installer. It will install the application and add a shortcut to your Startup folder.
 
-### Latest Version (Recommended)
+### macOS (Apple Silicon & Intel)
+1. Download `steelmouse-macos-arm64` (Apple Silicon M1-M4) or `steelmouse-macos-x64` (Intel Mac) from [Releases](https://github.com/yurtemre7/mouse-battery/releases/).
+2. Make it executable and run:
+   ```bash
+   chmod +x steelmouse-macos-arm64
+   ./steelmouse-macos-arm64
+   ```
 
-1. Download the latest application installer from the [Releases](https://github.com/yurtemre7/mouse-battery/releases/) tab.
-2. Run the installer. This will install the application and place a shortcut in your Start Menu and add it to your auto-startup folder.
-3. After installation, the installer will ask you if you want to run the application. If you choose not to, you can run it from the Start Menu shortcut or by restarting your computer.
+---
 
-#### Manual installation
+## 🛠️ Building from Source
 
-1. Download the Git repository as a zip file and extract it somewhere (or clone it with Git).
-2. Install [Python 3](<https://www.python.org/downloads/>) and ensure you check the box to add it to your PATH.<br>*Optionally*, you can also use [uv](https://github.com/astral-sh/uv?tab=readme-ov-file#installation) for this project.
-3. Install the following packages via the `pip install -r requirements.txt` command in the `mouse-battery` folder.
-4. Run the script:
-   - Place the `start_mouse.bat` file as a shortcut in your startup folder (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
-   - You may need to modify the bat script to point to your Python installation if you have multiple versions installed or have renamed the executable.
-   - Alternatively, you can run the script manually.
+### Native Rust (Recommended)
+Requires the [Rust toolchain](https://rustup.rs/):
 
-## Building application and installer from source
+```bash
+# Clone the repository
+git clone https://github.com/yurtemre7/mouse-battery.git
+cd mouse-battery/steelmouse_rust
 
-To build the application yourself, check out [`BUILDING.md`](./BUILDING.md)
+# Run in mock testing mode
+cargo run -- --mock
 
-## Supported Devices
+# Build production release binary (~2.1 MB)
+cargo build --release
+```
 
-The `rivalcfg` library supports a variety of devices. A complete list of supported devices can be found [here](https://flozz.github.io/rivalcfg/devices/index.html).
+### Legacy Python Version
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-## Troubleshooting
-
-If you encounter any issues, first check the [`KNOWNISSUES.md`](./KNOWNISSUES.md) file in the repository to see if your problem is already listed.
-
-If your problem is not listed, you can run the script in the `mouse-battery` folder. Note the output of the script and open an issue with the output and your mouse model. Provide additional details, such as whether you have multiple mice connected, your connection mode, etc.
-
-```sh
+# Run Python script
 python mouse.py
 ```
 
-## Uninstallation
+---
 
-### Latest Version
+## 🤝 Acknowledgements
 
-1. Go to the Control Panel and select "Uninstall a program".
-2. Find "SteelMouse" in the list and click "Uninstall".
+- [DeveloperX19](https://github.com/DeveloperX19) for the icon art license.
+- [flozz](https://github.com/flozz) for the `rivalcfg` library and reverse-engineered SteelSeries HID protocols.
+- [Pyenb](https://github.com/Pyenb), [T-solidus-T](https://github.com/T-solidus-T), and [bossman90](https://github.com/bossman90) for contributions to the original Python codebase.
 
-### Older Version
+## 📄 License
 
-1. Delete the `mouse-battery` folder.
-2. Delete the `start_mouse.bat` file in your startup folder (C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup).
-3. Uninstall Python 3 if you no longer need it.
-
-## Acknowledgements
-
-- [DeveloperX19](https://github.com/DeveloperX19) for the license of his intellectual property of the icon art.
-- [flozz](https://github.com/flozz) for the `rivalcfg` library and the idea of a standalone Python executable.
-- [Pyenb](https://github.com/Pyenb) for rewrites.
-- [T-solidus-T](https://github.com/T-solidus-T) for improvements to the threads, icon & menu logic.
-- [bossman90](https://github.com/bossman90) for the battery charging indicator in the system tray.
-
-## License
-
-MIT: Feel free to use this code as you wish. If you do use it, I'd appreciate a mention.
+MIT: Feel free to use this code as you wish. Mentioning the project is appreciated!

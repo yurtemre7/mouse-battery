@@ -1,0 +1,141 @@
+name: Build SteelMouse (Python & Rust)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    tags:
+      - 'v*'
+
+jobs:
+  build-python-windows:
+    name: Build Python Executable & Installer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole --add-data images:images mouse.py
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+        shell: powershell
+
+      - name: Compile Python Inno Setup script
+        run: |
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'innosetup\setup_python.iss'
+        shell: powershell
+
+      - name: Upload Python Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteelMouse-Python-Windows
+          path: |
+            dist/mouse.exe
+            innosetup/SteelMouse_Python_Setup.exe
+
+  build-rust-windows:
+    name: Build Rust Native Windows App & Installer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build Release Binary
+        run: cargo build --release --target x86_64-pc-windows-msvc
+        working-directory: steelmouse_rust
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+        shell: powershell
+
+      - name: Compile Rust Inno Setup script
+        run: |
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'innosetup\setup_rust.iss'
+        shell: powershell
+
+      - name: Upload Rust Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteelMouse-Rust-Windows
+          path: |
+            steelmouse_rust/target/x86_64-pc-windows-msvc/release/steelmouse.exe
+            innosetup/SteelMouse_Rust_Setup.exe
+
+  build-rust-macos:
+    name: Build Rust Native macOS Binaries
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Build macOS Apple Silicon Binary
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/steelmouse target/steelmouse-macos-arm64
+        working-directory: steelmouse_rust
+
+      - name: Build macOS Intel Binary
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/steelmouse target/steelmouse-macos-x64
+        working-directory: steelmouse_rust
+
+      - name: Upload macOS Separate Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteelMouse-Rust-macOS
+          path: |
+            steelmouse_rust/target/steelmouse-macos-arm64
+            steelmouse_rust/target/steelmouse-macos-x64
+
+  release:
+    name: Publish Release Artifacts
+    needs: [build-python-windows, build-rust-windows, build-rust-macos]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: "Release including both Rust (recommended) and Python builds for SteelMouse."
+          generate_release_notes: true
+          files: |
+            SteelMouse-Python-Windows/SteelMouse_Python_Setup.exe
+            SteelMouse-Python-Windows/mouse.exe
+            SteelMouse-Rust-Windows/SteelMouse_Rust_Setup.exe
+            SteelMouse-Rust-Windows/steelmouse.exe
+            SteelMouse-Rust-macOS/steelmouse-macos-arm64
+            SteelMouse-Rust-macOS/steelmouse-macos-x64
