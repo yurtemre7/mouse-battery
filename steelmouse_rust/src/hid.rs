@@ -99,7 +99,7 @@ impl MouseManager {
             });
         }
 
-        // 1. Try polling existing open cached device handle (<1ms instantaneous query)
+        // 1. Try polling existing open cached device handle
         if let Some(active) = &self.cached_device {
             if let Some((level, is_charging)) = Self::query_device_battery(&active.device, active.kind) {
                 return Ok(BatteryInfo {
@@ -132,7 +132,7 @@ impl MouseManager {
 
                 if let Some(prof) = profile {
                     if let Some(kind) = prof.battery_kind {
-                        // Fast filter: skip non-matching interfaces to prevent OS driver locks and 500ms timeouts
+                        // Skip non-matching interfaces to prevent OS driver locks and timeouts
                         let iface = get_interface_number(device_info);
                         if prof.endpoint != 0 && iface >= 0 && iface != prof.endpoint as i32 {
                             continue;
@@ -179,6 +179,25 @@ impl MouseManager {
     }
 
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
+        // First query attempt
+        let first = Self::query_device_battery_once(device, kind);
+        
+        // Small 20ms delay to allow mouse/receiver firmware to update payload buffer
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        
+        // Second query attempt for fresh status
+        let second = Self::query_device_battery_once(device, kind);
+
+        match (first, second) {
+            (_, Some((Some(lvl), chg))) => Some((Some(lvl), chg)),
+            (Some((Some(lvl), chg)), _) => Some((Some(lvl), chg)),
+            (_, Some(second_info)) => Some(second_info),
+            (Some(first_info), _) => Some(first_info),
+            (None, None) => None,
+        }
+    }
+
+    fn query_device_battery_once(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
         match kind {
             BatteryKind::AeroxPrime { command } => {
                 let mut req = [0u8; 64];
@@ -225,7 +244,7 @@ impl MouseManager {
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
+                if let Ok(read_len) = device.read_timeout(&mut res, 500) {
                     if read_len >= 3 {
                         let level = Some(res[0].min(100));
                         let is_charging = res[2] != 0;
