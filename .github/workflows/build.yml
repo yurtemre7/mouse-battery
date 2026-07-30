@@ -8,6 +8,10 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-python-windows:
     name: Build Python Executable & Installer
@@ -145,7 +149,7 @@ jobs:
             RAW_MSG="${{ github.event.head_commit.message }}"
             TAG_NAME=$(echo "$RAW_MSG" | sed -n 's/^release:\s*//p' | head -n1 | tr -d ' ')
             if [ -z "$TAG_NAME" ]; then
-              TAG_NAME="v2.0.2"
+              TAG_NAME="v2.0.3"
             fi
           fi
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
