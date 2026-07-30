@@ -194,7 +194,7 @@ impl MouseManager {
 
                 let mut res = [0u8; 64];
                 if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                    if read_len >= 1 {
+                    if read_len >= 2 {
                         return Self::decode_aerox_prime_battery(&res[..read_len]);
                     }
                 }
@@ -213,7 +213,7 @@ impl MouseManager {
 
                 let mut res = [0u8; 64];
                 if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                    if read_len >= 1 {
+                    if read_len >= 2 {
                         return Self::decode_rival3_650_battery(&res[..read_len]);
                     }
                 }
@@ -223,33 +223,40 @@ impl MouseManager {
     }
 
     fn decode_aerox_prime_battery(res: &[u8]) -> Option<(Option<u8>, bool)> {
-        // Robust byte detection handling both Windows (leading Report ID 0x00) and macOS/Linux
-        let byte_to_check = if res.len() >= 2 && res[0] == 0x00 && res[1] > 0 {
-            res[1]
-        } else if !res.is_empty() && res[0] > 0 {
-            res[0]
-        } else if res.len() >= 2 && res[1] > 0 {
-            res[1]
-        } else {
+        if res.len() < 2 {
             return None;
+        }
+
+        // On Windows hidapi, res[0] is Report ID 0x00, res[1] is data[0] (status byte 0x15), res[2] is data[1] (battery byte)
+        // rivalcfg uses data[1] strictly for battery level: ((data[1] & ~0x80) - 1) * 5
+        let battery_byte = if res[0] == 0x00 && res.len() >= 3 {
+            res[2]
+        } else {
+            res[1]
         };
 
-        let is_charging = (byte_to_check & CHARGING_FLAG) != 0;
-        let raw_val = byte_to_check & !CHARGING_FLAG;
-        if raw_val > 0 {
-            let level = ((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8;
-            Some((Some(level), is_charging))
-        } else {
-            Some((None, is_charging))
+        if battery_byte == 0 {
+            return None;
         }
+
+        let is_charging = (battery_byte & CHARGING_FLAG) != 0;
+        let raw_val = battery_byte & !CHARGING_FLAG;
+        let level = if raw_val > 0 {
+            Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
+        } else {
+            None
+        };
+
+        Some((level, is_charging))
     }
 
     fn decode_rival3_650_battery(res: &[u8]) -> Option<(Option<u8>, bool)> {
-        if res.is_empty() {
+        if res.len() < 2 {
             return None;
         }
-        let (level_byte, charging_byte) = if res[0] == 0x00 && res.len() >= 3 {
-            (res[1], res[2])
+
+        let (level_byte, charging_byte) = if res[0] == 0x00 && res.len() >= 4 {
+            (res[1], res[3])
         } else if res.len() >= 3 {
             (res[0], res[2])
         } else {
