@@ -11,6 +11,7 @@ on:
 jobs:
   build-python-windows:
     name: Build Python Executable & Installer
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -50,6 +51,7 @@ jobs:
 
   build-rust-windows:
     name: Build Rust Native Windows App & Installer
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -83,6 +85,7 @@ jobs:
 
   build-rust-macos:
     name: Build Rust Native macOS Binaries
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.ref, 'refs/tags/')
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -116,11 +119,27 @@ jobs:
   release:
     name: Publish Release Artifacts
     needs: [build-python-windows, build-rust-windows, build-rust-macos]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:') || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract Tag Name from Commit Message or Ref
+        id: release_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            # Extract tag name from commit message (e.g. 'release: v2.0.2' -> 'v2.0.2')
+            RAW_MSG="${{ github.event.head_commit.message }}"
+            TAG_NAME=$(echo "$RAW_MSG" | sed -n 's/^release:\s*//p' | head -n1 | tr -d ' ')
+            if [ -z "$TAG_NAME" ]; then
+              TAG_NAME="v2.0.2"
+            fi
+          fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Using release tag: $TAG_NAME"
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -132,6 +151,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tag_name: ${{ steps.release_tag.outputs.tag_name }}
           body: "Release including both Rust (recommended) and Python builds for SteelMouse."
           generate_release_notes: true
           files: |
