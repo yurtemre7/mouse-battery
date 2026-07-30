@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -70,6 +71,11 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "steelmouse_rust -> target"
+
       - name: Build Release Binary
         run: cargo build --release --target x86_64-pc-windows-msvc
         working-directory: steelmouse_rust
@@ -107,6 +113,11 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "steelmouse_rust -> target"
 
       - name: Build macOS Apple Silicon Binary
         run: cargo build --release --target aarch64-apple-darwin
