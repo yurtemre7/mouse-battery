@@ -30,11 +30,11 @@
 ## 🚀 Installation
 
 ### Windows (Recommended)
-1. Download the latest installer `SteelMouse_Rust_Setup.exe` from the [Releases](https://github.com/yurtemre7/mouse-battery/releases/) page.
+1. Download the latest installer `SteelMouse_Rust_Setup.exe` from the [Releases](https://github.com/yurtemre7/steel-mouse/releases/) page.
 2. Run the installer. It will install the application and add a shortcut to your Startup folder.
 
 ### macOS (Apple Silicon & Intel)
-1. Download `steelmouse-macos-arm64` (Apple Silicon M1-M4) or `steelmouse-macos-x64` (Intel Mac) from [Releases](https://github.com/yurtemre7/mouse-battery/releases/).
+1. Download `steelmouse-macos-arm64` (Apple Silicon M1-M4) or `steelmouse-macos-x64` (Intel Mac) from [Releases](https://github.com/yurtemre7/steel-mouse/releases/).
 2. Make it executable and run:
    ```bash
    chmod +x steelmouse-macos-arm64
@@ -50,7 +50,7 @@ Requires the [Rust toolchain](https://rustup.rs/):
 
 ```bash
 # Clone the repository
-git clone https://github.com/yurtemre7/mouse-battery.git
+git clone https://github.com/yurtemre7/steel-mouse.git
 cd mouse-battery/steelmouse_rust
 
 # Run in mock testing mode
