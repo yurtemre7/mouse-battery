@@ -162,7 +162,7 @@ jobs:
             RAW_MSG="${{ github.event.head_commit.message }}"
             TAG_NAME=$(echo "$RAW_MSG" | sed -n 's/^release:\s*//p' | head -n1 | tr -d ' ')
             if [ -z "$TAG_NAME" ]; then
-              TAG_NAME="v2.1.4"
+              TAG_NAME="v2.2.0"
             fi
           fi
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT

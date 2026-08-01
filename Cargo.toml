@@ -1,6 +1,6 @@
 [package]
 name = "steelmouse"
-version = "2.1.4"
+version = "2.2.0"
 edition = "2021"
 authors = ["SteelMouse Contributors"]
 description = "Native SteelSeries mouse battery system tray monitor"

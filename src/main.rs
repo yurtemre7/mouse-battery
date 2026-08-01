@@ -26,20 +26,6 @@ struct Args {
     record_fixture: bool,
 }
 
-fn load_app_icon() -> Option<eframe::egui::IconData> {
-    let icon_bytes = include_bytes!("../assets/logo.png");
-    if let Ok(img) = image::load_from_memory(icon_bytes) {
-        let rgba = img.to_rgba8();
-        let (width, height) = rgba.dimensions();
-        return Some(eframe::egui::IconData {
-            rgba: rgba.into_raw(),
-            width,
-            height,
-        });
-    }
-    None
-}
-
 fn main() {
     let args = Args::parse();
 
@@ -186,7 +172,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.1.4 (Rust System Tray) | mock={}", args.mock));
+    log::log(&format!("Starting SteelMouse v2.2.0 (Rust System Tray) | mock={}", args.mock));
     if args.mock {
         println!("Running in MOCK mode!");
     }
@@ -196,24 +182,5 @@ fn main() {
         std::process::exit(0);
     });
 
-    let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_visible(false)
-        .with_decorations(false);
-
-    if let Some(icon) = load_app_icon() {
-        viewport = viewport.with_icon(icon);
-    }
-
-    let native_options = eframe::NativeOptions {
-        viewport,
-        ..Default::default()
-    };
-
-    let mock_flag = args.mock;
-
-    let _ = eframe::run_native(
-        "SteelMouse Tray",
-        native_options,
-        Box::new(move |cc| Ok(Box::new(gui::SteelMouseApp::new(cc, mock_flag)))),
-    );
+    gui::run_tray_app(args.mock);
 }
