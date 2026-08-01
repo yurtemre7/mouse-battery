@@ -399,8 +399,15 @@ impl MouseManager {
         }
 
         // Determine battery byte location:
-        // Windows hidapi includes leading Report ID 0x00 at res[0] if res.len() >= 3.
+        // Response payloads can take forms:
+        // 1. [0x00, 0xD2, battery_byte, ...] (Leading Report ID 0x00)
+        // 2. [0xD2, 0x00, battery_byte, ...] (Command echo header 0xD2 followed by status 0x00)
+        // 3. [0xD2, 0xD2, battery_byte, ...] (Command echo header repetition)
+        // 4. [0xD2, battery_byte, ...]       (Direct command echo)
+        // 5. [battery_byte, ...]             (Direct raw payload)
         let battery_byte = if res[0] == 0x00 && res.len() >= 3 {
+            res[2]
+        } else if (res[0] == 0xD2 || res[0] == 0x92 || res[0] == 0xAA) && res.len() >= 3 && (res[1] == 0x00 || res[1] == res[0]) {
             res[2]
         } else if res[1] > 0 {
             res[1]

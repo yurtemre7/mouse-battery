@@ -191,7 +191,9 @@ impl SteelMouseApp {
                 set_macos_activation_policy(false);
 
                 ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                ctx.request_repaint();
             } else if event.id == self.tray_menu.refresh_item.id() {
                 let _ = self.wake_tx.send(());
             } else {
