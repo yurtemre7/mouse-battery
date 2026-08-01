@@ -3,6 +3,13 @@
 > **Current Version:** `v2.4.0`  
 > All notable changes to SteelMouse are automatically documented in this file based on release tags and git commit history.
 
+## [v2.4.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.4.0) - 2026-08-01
+
+### 🚀 Features
+
+- release: v2.4.0 (added in-app & installer autostart on login toggle for Windows and macOS) ([`71d50f6`](https://github.com/yurtemre7/steel-mouse/commit/71d50f6))
+---
+
 ## [v2.3.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.2) - 2026-08-01
 
 ### 🚀 Features
