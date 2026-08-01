@@ -36,7 +36,7 @@ mod win32 {
     pub fn hide_from_taskbar() {
         unsafe {
             let hwnd = get_hwnd();
-            if hwnd == 0 { return; }
+            if hwnd.is_null() { return; }
             let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
             SetWindowLongPtrW(
                 hwnd,
@@ -50,7 +50,7 @@ mod win32 {
     pub fn show_in_taskbar() {
         unsafe {
             let hwnd = get_hwnd();
-            if hwnd == 0 { return; }
+            if hwnd.is_null() { return; }
             let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
             SetWindowLongPtrW(
                 hwnd,
@@ -64,7 +64,7 @@ mod win32 {
     pub fn focus() {
         unsafe {
             let hwnd = get_hwnd();
-            if hwnd == 0 { return; }
+            if hwnd.is_null() { return; }
             // SW_RESTORE unminimizes, SetForegroundWindow raises
             ShowWindow(hwnd, SW_RESTORE);
             SetForegroundWindow(hwnd);
@@ -561,7 +561,7 @@ impl eframe::App for SteelMouseApp {
 
             ui.add_space(8.0);
             ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new("SteelMouse v2.1.1 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
+                ui.label(egui::RichText::new("SteelMouse v2.1.2 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
             });
         });
     }
