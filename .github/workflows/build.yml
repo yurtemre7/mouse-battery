@@ -153,16 +153,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Extract Tag Name from Commit Message or Ref
+      - name: Extract Tag Name from Cargo.toml, Commit Message or Ref
         id: release_tag
         run: |
+          CARGO_VER="v$(grep '^version =' Cargo.toml | head -n1 | cut -d '"' -f2)"
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG_NAME="${{ github.ref_name }}"
           else
             RAW_MSG="${{ github.event.head_commit.message }}"
             TAG_NAME=$(echo "$RAW_MSG" | sed -n 's/^release:\s*//p' | head -n1 | tr -d ' ')
             if [ -z "$TAG_NAME" ]; then
-              TAG_NAME="v2.2.0"
+              TAG_NAME="$CARGO_VER"
             fi
           fi
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
