@@ -516,6 +516,21 @@ mod tests {
     }
 
     #[test]
+    fn test_captured_live_hardware_fixture() {
+        // Captured live from real SteelSeries Aerox 3 Wireless (PID 0x1838) Interface 3 Cmd 0xD2
+        let captured_aerox3_sample = [
+            210, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let decoded = MouseManager::decode_aerox_prime_response(&captured_aerox3_sample)
+            .expect("Should decode real live hardware fixture");
+        assert_eq!(decoded.0, Some(85));
+        assert_eq!(decoded.1, false);
+    }
+
+    #[test]
     fn test_decode_aerox_prime_macos_format() {
         let res_85 = [0x15, 18];
         let decoded = MouseManager::decode_aerox_prime_response(&res_85).expect("Should decode");
