@@ -1,5 +1,6 @@
 ### 🚀 Features
 
+- release: v2.3.1 (automated changelog & release notes integration) ([`bca28fa`](https://github.com/yurtemre7/steel-mouse/commit/bca28fa))
 - docs: add CHANGELOG.md and generator script ([`7f99ef4`](https://github.com/yurtemre7/steel-mouse/commit/7f99ef4))
 ### ⚡ Performance & Architecture
 

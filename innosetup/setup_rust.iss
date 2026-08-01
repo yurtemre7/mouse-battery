@@ -2,14 +2,16 @@
 
 [Setup]
 AppName={#MyAppName}
-AppVersion=2.3.1
-DefaultDirName={commonpf}\{#MyAppName}
+AppVersion=2.3.2
+DefaultDirName={userpf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 UninstallDisplayIcon={app}\steelmouse.exe
 OutputDir=.
 OutputBaseFilename=SteelMouse_Rust_Setup
-Compression=lzma
-SolidCompression=yes
+Compression=lzma2/ultra64
+SolidCompression=no
 SetupIconFile=..\steelmouse_python\images\logo.ico
 
 [Files]
@@ -19,7 +21,7 @@ Source: "..\target\release\steelmouse.exe"; DestDir: "{app}"; Flags: skipifsourc
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\steelmouse.exe"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\steelmouse.exe"; Tasks: autostart
+Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\steelmouse.exe"; Tasks: autostart
 
 [Run]
 Filename: "{app}\steelmouse.exe"; Description: "Launch the application"; Flags: nowait postinstall skipifsilent

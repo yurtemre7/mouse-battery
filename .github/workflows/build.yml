@@ -93,10 +93,11 @@ jobs:
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'innosetup\setup_rust.iss'
         shell: powershell
 
-      - name: Stage Rust Windows Installer Artifact
+      - name: Stage Rust Windows Installer & Standalone Zip Artifacts
         run: |
           mkdir staging
           copy innosetup\SteelMouse_Rust_Setup.exe staging\SteelMouse_Rust_Setup.exe
+          Compress-Archive -Path target\x86_64-pc-windows-msvc\release\steelmouse.exe -DestinationPath staging\steelmouse-windows-x64.zip
         shell: powershell
 
       - name: Upload Rust Windows Artifacts
