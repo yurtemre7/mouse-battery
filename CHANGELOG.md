@@ -1,13 +1,17 @@
 # ⚡ SteelMouse Changelog
 
-> **Current Version:** `v2.3.0`  
+> **Current Version:** `v2.3.1`  
 > All notable changes to SteelMouse are automatically documented in this file based on release tags and git commit history.
 
-## [v2.3.0-next](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.0-next) - 2026-08-01
+## [v2.3.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.1) - 2026-08-01
 
 ### 🚀 Features
 
 - docs: add CHANGELOG.md and generator script ([`7f99ef4`](https://github.com/yurtemre7/steel-mouse/commit/7f99ef4))
+### ⚡ Performance & Architecture
+
+- ci: format RELEASE_NOTES.md to contain only release tag commit bullets ([`27158c5`](https://github.com/yurtemre7/steel-mouse/commit/27158c5))
+- ci: automate CHANGELOG.md & RELEASE_NOTES.md generation in release workflow ([`39e5703`](https://github.com/yurtemre7/steel-mouse/commit/39e5703))
 ---
 
 ## [v2.3.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.0) - 2026-08-01
