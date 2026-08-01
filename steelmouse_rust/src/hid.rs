@@ -4,6 +4,7 @@ use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
 const CHARGING_FLAG: u8 = 0x80;
+const READ_TIMEOUT_MS: i32 = 200;
 
 #[derive(Debug, Clone)]
 pub struct BatteryInfo {
@@ -209,7 +210,7 @@ impl MouseManager {
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, 300) {
+                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
                     if read_len >= 2 {
                         return Self::decode_aerox_prime_response(&res[..read_len]);
                     }
@@ -232,7 +233,7 @@ impl MouseManager {
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, 400) {
+                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
                     if read_len >= 2 {
                         return Self::decode_rival3_650_response(&res[..read_len]);
                     }
