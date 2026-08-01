@@ -14,79 +14,18 @@ use crate::icon::create_tray_icon;
 use crate::log;
 use crate::menu::TrayMenu;
 
-/// Windows-specific Win32 helpers: taskbar visibility + window focus
-#[cfg(target_os = "windows")]
-mod win32 {
-    use std::ffi::OsStr;
-    use std::os::windows::ffi::OsStrExt;
-    use windows_sys::Win32::Foundation::HWND;
-    use windows_sys::Win32::UI::WindowsAndMessaging::*;
-
-    const WINDOW_TITLE: &str = "SteelMouse Dashboard";
-
-    fn get_hwnd() -> HWND {
-        let wide: Vec<u16> = OsStr::new(WINDOW_TITLE)
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
-        unsafe { FindWindowW(std::ptr::null(), wide.as_ptr()) }
-    }
-
-    /// Remove window from taskbar (tray-only mode). Uses WS_EX_TOOLWINDOW.
-    pub fn hide_from_taskbar() {
-        unsafe {
-            let hwnd = get_hwnd();
-            if hwnd.is_null() { return; }
-            let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-            SetWindowLongPtrW(
-                hwnd,
-                GWL_EXSTYLE,
-                (ex | WS_EX_TOOLWINDOW as isize) & !(WS_EX_APPWINDOW as isize),
-            );
-        }
-    }
-
-    /// Show window in taskbar (dashboard mode). Clears WS_EX_TOOLWINDOW.
-    pub fn show_in_taskbar() {
-        unsafe {
-            let hwnd = get_hwnd();
-            if hwnd.is_null() { return; }
-            let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-            SetWindowLongPtrW(
-                hwnd,
-                GWL_EXSTYLE,
-                (ex & !(WS_EX_TOOLWINDOW as isize)) | WS_EX_APPWINDOW as isize,
-            );
-        }
-    }
-
-    /// Bring window to front and give it keyboard focus.
-    pub fn focus() {
-        unsafe {
-            let hwnd = get_hwnd();
-            if hwnd.is_null() { return; }
-            // SW_RESTORE unminimizes, SetForegroundWindow raises
-            ShowWindow(hwnd, SW_RESTORE);
-            SetForegroundWindow(hwnd);
-            BringWindowToTop(hwnd);
-        }
-    }
-}
-
 enum AppMessage {
     BatteryUpdated(Result<BatteryInfo, String>, String),
 }
 
 // Shared flags set from the tray event thread, read by the eframe update() loop
 struct TrayFlags {
-    open_dashboard: AtomicBool,
     refresh_now: AtomicBool,
 }
 
 impl TrayFlags {
     fn new() -> Arc<Self> {
         Arc::new(Self {
-            open_dashboard: AtomicBool::new(false),
             refresh_now: AtomicBool::new(false),
         })
     }
@@ -127,14 +66,13 @@ pub struct SteelMouseApp {
     tray_icon: Option<TrayIcon>,
     tray_menu: Arc<Mutex<TrayMenu>>,
     flags: Arc<TrayFlags>,
-    window_visible: bool,
 }
 
 impl SteelMouseApp {
-    pub fn new(cc: &eframe::CreationContext<'_>, mock_mode: bool, start_hidden: bool) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>, mock_mode: bool) -> Self {
         cc.egui_ctx.set_visuals(egui::Visuals::dark());
 
-        log::log("SteelMouseApp::new() start");
+        log::log("SteelMouseApp::new() start (pure system tray mode)");
 
         let config = AppConfig::load();
         let current_config = Arc::new(Mutex::new(config.clone()));
@@ -146,7 +84,7 @@ impl SteelMouseApp {
         let flags = TrayFlags::new();
         let egui_ctx = cc.egui_ctx.clone();
 
-        // --- Thread 0: Ticker - forces update() to be called even when window is off-screen ---
+        // --- Thread 0: Ticker - forces update() to be called even when window is hidden ---
         {
             let ticker_ctx = egui_ctx.clone();
             thread::spawn(move || {
@@ -177,9 +115,7 @@ impl SteelMouseApp {
                 .ok()
         };
 
-        // --- Thread 1: Tray menu event handler (independent of eframe update loop!) ---
-        // This MUST run independently so Quit and Open Dashboard work even when
-        // the eframe window is hidden and update() is not being called by winit.
+        // --- Thread 1: Tray menu event handler ---
         {
             let flags_tray = flags.clone();
             let egui_ctx_tray = egui_ctx.clone();
@@ -189,7 +125,6 @@ impl SteelMouseApp {
                 let m = tray_menu.lock().unwrap();
                 (
                     m.quit_item.id().clone(),
-                    m.dashboard_item.id().clone(),
                     m.refresh_item.id().clone(),
                     m.mode_hover_item.id().clone(),
                     m.mode_icon_item.id().clone(),
@@ -200,26 +135,20 @@ impl SteelMouseApp {
 
             thread::spawn(move || {
                 log::log("tray event thread started");
-                let (quit_id, dashboard_id, refresh_id, hover_id, icon_id, interval_ids) = tray_menu_ids;
+                let (quit_id, refresh_id, hover_id, icon_id, interval_ids) = tray_menu_ids;
                 loop {
-                    // Block until a menu event arrives (no busy-spinning)
                     if let Ok(event) = menu_rx.recv() {
                         log::log(&format!("tray event: id={:?}", event.id));
 
                         if event.id == quit_id {
                             log::log("Quit clicked - calling exit(0)");
                             std::process::exit(0);
-                        } else if event.id == dashboard_id {
-                            log::log("Dashboard clicked - setting flag");
-                            flags_tray.open_dashboard.store(true, Ordering::Relaxed);
-                            egui_ctx_tray.request_repaint();
                         } else if event.id == refresh_id {
                             log::log("Refresh clicked");
                             flags_tray.refresh_now.store(true, Ordering::Relaxed);
                             let _ = wake_tx_tray.send(());
                             egui_ctx_tray.request_repaint();
                         } else {
-                            // Check display mode / interval changes
                             let mut cfg = config_tray.lock().unwrap().clone();
                             let mut changed = false;
                             if event.id == hover_id {
@@ -287,20 +216,10 @@ impl SteelMouseApp {
             });
         }
 
-        // On macOS: hide dock icon when in tray mode
-        if start_hidden {
-            #[cfg(target_os = "macos")]
-            set_macos_activation_policy(true);
-        }
+        #[cfg(target_os = "macos")]
+        set_macos_activation_policy(true);
 
-        // On Windows: keep eframe window "visible" but off-screen so update() keeps firing.
-        // On macOS: we can safely hide it via Visible(false) since Cocoa handles repaints differently.
-        if start_hidden {
-            #[cfg(target_os = "macos")]
-            set_macos_activation_policy(true);
-
-            cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-        }
+        cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
 
         Self {
             config: current_config,
@@ -312,7 +231,6 @@ impl SteelMouseApp {
             tray_icon,
             tray_menu,
             flags,
-            window_visible: !start_hidden,
         }
     }
 
@@ -350,183 +268,17 @@ impl SteelMouseApp {
             menu.update(info_opt.as_ref(), Some(&timestamp), cfg.time_delta, cfg.display_mode);
         }
     }
-
-    fn show_window(&mut self, ctx: &egui::Context) {
-        log::log("show_window: making dashboard visible");
-        self.window_visible = true;
-
-        #[cfg(target_os = "macos")]
-        set_macos_activation_policy(false);
-
-        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
-        ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
-        ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
-
-        #[cfg(target_os = "windows")]
-        win32::focus();
-
-        ctx.request_repaint();
-    }
-
-    fn hide_window(&mut self, ctx: &egui::Context) {
-        log::log("hide_window: hiding dashboard to tray");
-        self.window_visible = false;
-
-        #[cfg(target_os = "macos")]
-        set_macos_activation_policy(true);
-
-        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-    }
 }
 
 impl eframe::App for SteelMouseApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Always process battery messages regardless of window visibility
         self.process_battery_messages();
 
-        // Check flags set by the tray event thread
-        if self.flags.open_dashboard.swap(false, Ordering::Relaxed) {
-            self.show_window(ctx);
-        }
         if self.flags.refresh_now.swap(false, Ordering::Relaxed) {
             let _ = self.wake_tx.send(());
         }
 
-        // Handle window X button -> hide to tray
-        if ctx.input(|i| i.viewport().close_requested()) {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            self.hide_window(ctx);
-            return;
-        }
-
-        // Keep update() alive even when hidden on Windows (we're off-screen, not truly hidden)
-        ctx.request_repaint_after(Duration::from_secs(1));
-
-        if !self.window_visible {
-            // Log occasionally to confirm update() is still ticking while hidden
-            static HIDDEN_TICK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-            let tick = HIDDEN_TICK.fetch_add(1, Ordering::Relaxed);
-            if tick % 20 == 0 {
-                log::log(&format!("update() hidden tick #{} battery={:?}", tick, self.battery_info.as_ref().map(|b| b.level)));
-            }
-            // Render nothing but keep eframe ticking
-            egui::CentralPanel::default().show(ctx, |_ui| {});
-            return;
-        }
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.add_space(4.0);
-                ui.heading("⚡ SteelMouse Dashboard");
-                ui.label(egui::RichText::new("SteelSeries Battery & Device Monitor").small().color(egui::Color32::GRAY));
-                ui.add_space(8.0);
-            });
-
-            // --- 1. Main Device Status Card ---
-            ui.group(|ui| {
-                ui.style_mut().spacing.item_spacing.y = 6.0;
-
-                if let Some(info) = &self.battery_info {
-                    ui.vertical_centered(|ui| {
-                        ui.label(egui::RichText::new(&info.name).strong().size(18.0).color(egui::Color32::WHITE));
-                        ui.add_space(4.0);
-
-                        if let Some(lvl) = info.level {
-                            let level_color = if info.is_charging {
-                                egui::Color32::from_rgb(76, 217, 100)
-                            } else if lvl > 30 {
-                                egui::Color32::from_rgb(90, 200, 250)
-                            } else if lvl > 15 {
-                                egui::Color32::from_rgb(255, 204, 0)
-                            } else {
-                                egui::Color32::from_rgb(255, 59, 48)
-                            };
-
-                            ui.label(
-                                egui::RichText::new(format!("{}%", lvl))
-                                    .size(46.0)
-                                    .strong()
-                                    .color(level_color),
-                            );
-
-                            let progress = (lvl as f32) / 100.0;
-                            ui.add(
-                                egui::ProgressBar::new(progress)
-                                    .text(format!("{}%", lvl))
-                                    .animate(info.is_charging),
-                            );
-                        } else {
-                            ui.label(egui::RichText::new("Battery: N/A").size(24.0).color(egui::Color32::GRAY));
-                        }
-
-                        ui.add_space(4.0);
-
-                        let status_text = if info.is_charging { "⚡ Status: Charging" } else { "🔋 Status: Discharging" };
-                        ui.label(egui::RichText::new(status_text).size(14.0).color(egui::Color32::LIGHT_GRAY));
-
-                        if let Some(est) = &info.estimated_time {
-                            ui.label(egui::RichText::new(est).size(13.0).italics().color(egui::Color32::LIGHT_BLUE));
-                        }
-                    });
-                } else {
-                    ui.vertical_centered(|ui| {
-                        ui.add_space(10.0);
-                        ui.label(egui::RichText::new("⚠️ No supported SteelSeries mouse detected").size(15.0).color(egui::Color32::LIGHT_RED));
-                        ui.label(egui::RichText::new("Please plug in your mouse or dongle.").small().color(egui::Color32::GRAY));
-                        ui.add_space(10.0);
-                    });
-                }
-            });
-
-            ui.add_space(10.0);
-
-            // --- 2. Settings & Controls ---
-            ui.group(|ui| {
-                ui.heading("⚙ Settings & Preferences");
-                ui.add_space(4.0);
-
-                ui.horizontal(|ui| {
-                    if ui.button("🔄 Refresh Now").clicked() {
-                        let _ = self.wake_tx.send(());
-                    }
-                    ui.label(egui::RichText::new(&self.status_msg).small().color(egui::Color32::GRAY));
-                });
-
-                ui.separator();
-
-                let mut cfg = self.config.lock().unwrap().clone();
-                let mut changed = false;
-
-                ui.label(egui::RichText::new("System Tray Display Mode:").strong());
-                if ui.radio_value(&mut cfg.display_mode, DisplayMode::Hover, "Hover tooltip for percentage").changed() {
-                    changed = true;
-                }
-                if ui.radio_value(&mut cfg.display_mode, DisplayMode::Icon, "Render percentage number overlay on icon").changed() {
-                    changed = true;
-                }
-
-                ui.separator();
-
-                ui.label(egui::RichText::new("Background Refresh Interval:").strong());
-                ui.horizontal(|ui| {
-                    if ui.selectable_value(&mut cfg.time_delta, 60, "1m").changed() { changed = true; }
-                    if ui.selectable_value(&mut cfg.time_delta, 300, "5m").changed() { changed = true; }
-                    if ui.selectable_value(&mut cfg.time_delta, 600, "10m").changed() { changed = true; }
-                    if ui.selectable_value(&mut cfg.time_delta, 1800, "30m").changed() { changed = true; }
-                    if ui.selectable_value(&mut cfg.time_delta, 3600, "1h").changed() { changed = true; }
-                });
-
-                if changed {
-                    cfg.save();
-                    *self.config.lock().unwrap() = cfg;
-                    let _ = self.wake_tx.send(());
-                }
-            });
-
-            ui.add_space(8.0);
-            ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new("SteelMouse v2.1.3 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
-            });
-        });
+        // Render nothing - pure background system tray app
+        egui::CentralPanel::default().show(ctx, |_ui| {});
     }
 }

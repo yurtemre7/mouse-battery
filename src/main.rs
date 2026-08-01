@@ -17,10 +17,6 @@ struct Args {
     #[arg(short, long, env = "MOCK_MOUSE")]
     mock: bool,
 
-    /// Open native desktop GUI dashboard window on launch
-    #[arg(short, long)]
-    gui: bool,
-
     /// Print detailed HID diagnostic report of all connected SteelSeries devices
     #[arg(short, long)]
     dump_hid: bool,
@@ -190,7 +186,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.1.3 (Rust) | mock={} gui={}", args.mock, args.gui));
+    log::log(&format!("Starting SteelMouse v2.1.4 (Rust System Tray) | mock={}", args.mock));
     if args.mock {
         println!("Running in MOCK mode!");
     }
@@ -201,8 +197,8 @@ fn main() {
     });
 
     let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_inner_size([440.0, 420.0])
-        .with_resizable(false);
+        .with_visible(false)
+        .with_decorations(false);
 
     if let Some(icon) = load_app_icon() {
         viewport = viewport.with_icon(icon);
@@ -214,11 +210,10 @@ fn main() {
     };
 
     let mock_flag = args.mock;
-    let start_hidden = !args.gui;
 
     let _ = eframe::run_native(
-        "SteelMouse Dashboard",
+        "SteelMouse Tray",
         native_options,
-        Box::new(move |cc| Ok(Box::new(gui::SteelMouseApp::new(cc, mock_flag, start_hidden)))),
+        Box::new(move |cc| Ok(Box::new(gui::SteelMouseApp::new(cc, mock_flag)))),
     );
 }

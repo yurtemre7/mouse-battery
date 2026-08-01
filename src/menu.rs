@@ -7,7 +7,6 @@ use crate::hid::BatteryInfo;
 
 pub struct TrayMenu {
     pub menu: Menu,
-    pub dashboard_item: MenuItem,
     pub name_item: MenuItem,
     pub battery_item: MenuItem,
     pub status_item: MenuItem,
@@ -30,10 +29,7 @@ impl TrayMenu {
     ) -> Self {
         let menu = Menu::new();
 
-        // 1. Open GUI Dashboard Action
-        let dashboard_item = MenuItem::new("⚡ Open Dashboard Window", true, None);
-
-        // 2. Status Information Labels (Disabled)
+        // 1. Status Information Labels (Disabled)
         let name_text = battery_info
             .map(|b| format!("Name: {}", b.name))
             .unwrap_or_else(|| "Name: N/A".to_string());
@@ -105,8 +101,6 @@ impl TrayMenu {
         let quit_item = MenuItem::new("Quit", true, None);
 
         // Build Menu Hierarchy
-        menu.append(&dashboard_item).unwrap();
-        menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&name_item).unwrap();
         menu.append(&battery_item).unwrap();
         menu.append(&status_item).unwrap();
@@ -120,7 +114,6 @@ impl TrayMenu {
 
         Self {
             menu,
-            dashboard_item,
             name_item,
             battery_item,
             status_item,
@@ -170,7 +163,6 @@ impl TrayMenu {
         ));
 
         // Re-enable interactive items & submenus
-        self.dashboard_item.set_enabled(true);
         self.refresh_item.set_enabled(true);
         self.interval_submenu.set_enabled(true);
         self.mode_submenu.set_enabled(true);
