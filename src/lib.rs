@@ -4,6 +4,7 @@
 //! Supports 78 SteelSeries Product IDs, HID buffer draining, multi-pass 2.4GHz wireless querying,
 //! charging status detection, and battery discharge rate estimation.
 
+pub mod autostart;
 pub mod config;
 pub mod devices;
 pub mod hid;

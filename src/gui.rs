@@ -119,11 +119,12 @@ pub fn run_tray_app(mock_mode: bool) {
             m.refresh_item.id().clone(),
             m.mode_hover_item.id().clone(),
             m.mode_icon_item.id().clone(),
+            m.autostart_item.id().clone(),
             m.interval_items.iter().map(|(&s, i)| (s, i.id().clone())).collect::<Vec<_>>(),
         )
     };
 
-    let (quit_id, refresh_id, hover_id, icon_id, interval_ids) = tray_menu_ids;
+    let (quit_id, refresh_id, hover_id, icon_id, autostart_id, interval_ids) = tray_menu_ids;
 
     event_loop.run(move |_event, _, control_flow| {
         *control_flow = ControlFlow::WaitUntil(
@@ -168,6 +169,13 @@ pub fn run_tray_app(mock_mode: bool) {
             } else if event.id == refresh_id {
                 log::log("Refresh clicked");
                 let _ = wake_tx.send(());
+            } else if event.id == autostart_id {
+                let m = tray_menu.lock().unwrap();
+                let is_checked = m.autostart_item.is_checked();
+                let target_state = !is_checked;
+                log::log(&format!("Autostart toggled -> {}", target_state));
+                let _ = crate::autostart::set_autostart(target_state);
+                m.autostart_item.set_checked(target_state);
             } else {
                 let mut cfg = current_config.lock().unwrap().clone();
                 let mut changed = false;

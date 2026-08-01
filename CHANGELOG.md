@@ -1,7 +1,14 @@
 # ⚡ SteelMouse Changelog
 
-> **Current Version:** `v2.3.2`  
+> **Current Version:** `v2.4.0`  
 > All notable changes to SteelMouse are automatically documented in this file based on release tags and git commit history.
+
+## [v2.3.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.2) - 2026-08-01
+
+### 🚀 Features
+
+- release: v2.3.2 (user-space lowest privileges setup, non-solid lzma2 compression, and standalone windows zip release) ([`8969d7e`](https://github.com/yurtemre7/steel-mouse/commit/8969d7e))
+---
 
 ## [v2.3.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.1) - 2026-08-01
 

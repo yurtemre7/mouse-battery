@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod autostart;
 mod config;
 mod devices;
 mod gui;
@@ -173,7 +174,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.3.2 (Rust System Tray) | mock={}", args.mock));
+    log::log(&format!("Starting SteelMouse v2.4.0 (Rust System Tray) | mock={}", args.mock));
     if args.mock {
         println!("Running in MOCK mode!");
     }

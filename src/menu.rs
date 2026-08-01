@@ -17,6 +17,7 @@ pub struct TrayMenu {
     pub mode_submenu: Submenu,
     pub mode_hover_item: CheckMenuItem,
     pub mode_icon_item: CheckMenuItem,
+    pub autostart_item: CheckMenuItem,
     pub quit_item: MenuItem,
 }
 
@@ -58,44 +59,47 @@ impl TrayMenu {
         );
         let last_update_item = MenuItem::new(&last_update_text, false, None);
 
-        // 3. Manual Refresh Action
-        let refresh_item = MenuItem::new("Refresh Now", true, None);
+        // 2. Refresh Action Button
+        let refresh_item = MenuItem::new("🔄 Refresh Now", true, None);
 
-        // 4. Interactive Refresh Interval Submenu (Static Header)
-        let interval_submenu = Submenu::new("Refresh interval", true);
-
+        // 3. Refresh Interval Selection Submenu
+        let interval_submenu = Submenu::new("⏱ Background Refresh Interval", true);
         let intervals = vec![
-            (60u64, "1 minute"),
-            (300u64, "5 minutes"),
-            (600u64, "10 minutes"),
-            (1800u64, "30 minutes"),
-            (3600u64, "1 hour"),
+            (60, "1 Minute"),
+            (300, "5 Minutes"),
+            (600, "10 Minutes"),
+            (1800, "30 Minutes"),
+            (3600, "1 Hour"),
         ];
 
         let mut interval_items = HashMap::new();
-        for (seconds, label) in intervals {
-            let item = CheckMenuItem::new(label, seconds == time_delta, true, None);
+        for (secs, label) in intervals {
+            let item = CheckMenuItem::new(label, true, secs == time_delta, None);
             interval_submenu.append(&item).unwrap();
-            interval_items.insert(seconds, item);
+            interval_items.insert(secs, item);
         }
 
-        // 5. Interactive Display Mode Submenu (Static Header)
-        let mode_submenu = Submenu::new("Tray battery display", true);
+        // 4. Display Mode Selection Submenu
+        let mode_submenu = Submenu::new("⚙ Tray Icon Mode", true);
         let mode_hover_item = CheckMenuItem::new(
-            "Hover for percentage",
-            display_mode == DisplayMode::Hover,
+            "Hover Tooltip Only",
             true,
+            display_mode == DisplayMode::Hover,
             None,
         );
         let mode_icon_item = CheckMenuItem::new(
-            "Show percentage on icon",
-            display_mode == DisplayMode::Icon,
+            "Render Percentage Number on Icon",
             true,
+            display_mode == DisplayMode::Icon,
             None,
         );
 
         mode_submenu.append(&mode_hover_item).unwrap();
         mode_submenu.append(&mode_icon_item).unwrap();
+
+        // 5. Autostart Option Toggle
+        let is_autostart = crate::autostart::is_autostart_enabled();
+        let autostart_item = CheckMenuItem::new("Start Automatically on Login", true, is_autostart, None);
 
         // 6. Quit Option
         let quit_item = MenuItem::new("Quit", true, None);
@@ -109,6 +113,7 @@ impl TrayMenu {
         menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&interval_submenu).unwrap();
         menu.append(&mode_submenu).unwrap();
+        menu.append(&autostart_item).unwrap();
         menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&quit_item).unwrap();
 
@@ -124,6 +129,7 @@ impl TrayMenu {
             mode_submenu,
             mode_hover_item,
             mode_icon_item,
+            autostart_item,
             quit_item,
         }
     }

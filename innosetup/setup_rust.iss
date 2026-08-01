@@ -2,7 +2,7 @@
 
 [Setup]
 AppName={#MyAppName}
-AppVersion=2.3.2
+AppVersion=2.4.0
 DefaultDirName={userpf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 PrivilegesRequired=lowest
