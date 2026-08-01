@@ -14,6 +14,65 @@ use crate::icon::create_tray_icon;
 use crate::log;
 use crate::menu::TrayMenu;
 
+/// Windows-specific Win32 helpers: taskbar visibility + window focus
+#[cfg(target_os = "windows")]
+mod win32 {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::UI::WindowsAndMessaging::*;
+
+    const WINDOW_TITLE: &str = "SteelMouse Dashboard";
+
+    fn get_hwnd() -> HWND {
+        let wide: Vec<u16> = OsStr::new(WINDOW_TITLE)
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+        unsafe { FindWindowW(std::ptr::null(), wide.as_ptr()) }
+    }
+
+    /// Remove window from taskbar (tray-only mode). Uses WS_EX_TOOLWINDOW.
+    pub fn hide_from_taskbar() {
+        unsafe {
+            let hwnd = get_hwnd();
+            if hwnd == 0 { return; }
+            let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+            SetWindowLongPtrW(
+                hwnd,
+                GWL_EXSTYLE,
+                (ex | WS_EX_TOOLWINDOW as isize) & !(WS_EX_APPWINDOW as isize),
+            );
+        }
+    }
+
+    /// Show window in taskbar (dashboard mode). Clears WS_EX_TOOLWINDOW.
+    pub fn show_in_taskbar() {
+        unsafe {
+            let hwnd = get_hwnd();
+            if hwnd == 0 { return; }
+            let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+            SetWindowLongPtrW(
+                hwnd,
+                GWL_EXSTYLE,
+                (ex & !(WS_EX_TOOLWINDOW as isize)) | WS_EX_APPWINDOW as isize,
+            );
+        }
+    }
+
+    /// Bring window to front and give it keyboard focus.
+    pub fn focus() {
+        unsafe {
+            let hwnd = get_hwnd();
+            if hwnd == 0 { return; }
+            // SW_RESTORE unminimizes, SetForegroundWindow raises
+            ShowWindow(hwnd, SW_RESTORE);
+            SetForegroundWindow(hwnd);
+            BringWindowToTop(hwnd);
+        }
+    }
+}
+
 enum AppMessage {
     BatteryUpdated(Result<BatteryInfo, String>, String),
 }
@@ -69,6 +128,8 @@ pub struct SteelMouseApp {
     tray_menu: Arc<Mutex<TrayMenu>>,
     flags: Arc<TrayFlags>,
     window_visible: bool,
+    /// True only for the very first update() call - used to apply Win32 tray setup
+    first_frame: bool,
 }
 
 impl SteelMouseApp {
@@ -260,6 +321,7 @@ impl SteelMouseApp {
             tray_menu,
             flags,
             window_visible: !start_hidden,
+            first_frame: true,
         }
     }
 
@@ -311,6 +373,9 @@ impl SteelMouseApp {
             ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(true));
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([440.0, 420.0].into()));
             ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([200.0, 200.0].into()));
+            // Show in taskbar + bring to front via Win32
+            win32::show_in_taskbar();
+            win32::focus();
         }
 
         ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
@@ -328,6 +393,8 @@ impl SteelMouseApp {
 
         #[cfg(target_os = "windows")]
         {
+            // Remove from taskbar before moving off-screen
+            win32::hide_from_taskbar();
             ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([10.0, 10.0].into()));
             ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
@@ -340,6 +407,16 @@ impl SteelMouseApp {
 
 impl eframe::App for SteelMouseApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // On the very first frame: apply Win32 taskbar setup (HWND is now available)
+        if self.first_frame {
+            self.first_frame = false;
+            #[cfg(target_os = "windows")]
+            if !self.window_visible {
+                win32::hide_from_taskbar();
+                log::log("first_frame: applied WS_EX_TOOLWINDOW (hidden from taskbar)");
+            }
+        }
+
         // Always process battery messages regardless of window visibility
         self.process_battery_messages();
 
