@@ -352,54 +352,50 @@ impl MouseManager {
     }
 
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
-        // Query 1: Wake up mouse firmware / 2.4GHz wireless receiver payload buffer
-        let first = Self::query_device_battery_once(device, kind);
+        // Drain any stale bytes left in the HID read buffer from a previous query
+        let mut drain_buf = [0u8; 64];
+        while device.read_timeout(&mut drain_buf, 0).unwrap_or(0) > 0 {}
 
-        // 50ms pause to allow 2.4GHz receiver to update internal register
-        std::thread::sleep(std::time::Duration::from_millis(50));
-
-        // Query 2: Fetch guaranteed fresh battery level
-        let second = Self::query_device_battery_once(device, kind);
-
-        // Prefer fresh second query result, fallback to first if second failed
-        second.or(first)
+        // Send query and read fresh response (single query - no double-query stale buffer issue)
+        Self::query_device_battery_once(device, kind)
     }
 
     fn query_device_battery_once(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
         match kind {
             BatteryKind::AeroxPrime { command } => {
-                let pkt_2 = [0x00, command];
                 let mut req_64 = [0u8; 64];
                 req_64[0] = 0x00;
                 req_64[1] = command;
 
-                let write_ok = device.write(&pkt_2).is_ok()
-                    || device.write(&req_64).is_ok()
-                    || device.send_feature_report(&pkt_2).is_ok()
-                    || device.send_feature_report(&[0x02, command]).is_ok();
+                // Try writing full 64-byte packet first (most reliable on Windows)
+                let write_ok = device.write(&req_64).is_ok()
+                    || device.write(&[0x00, command]).is_ok()
+                    || device.send_feature_report(&[0x00, command]).is_ok();
 
                 if !write_ok {
+                    log::log(&format!("AeroxPrime write failed for cmd=0x{:02X}", command));
                     return None;
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                    if read_len >= 2 {
-                        return Self::decode_aerox_prime_response(&res[..read_len]);
+                match device.read_timeout(&mut res, READ_TIMEOUT_MS) {
+                    Ok(read_len) if read_len >= 2 => {
+                        log::log(&format!("AeroxPrime raw[0..8]={:?}", &res[..read_len.min(8)]));
+                        Self::decode_aerox_prime_response(&res[..read_len])
                     }
+                    Ok(n) => { log::log(&format!("AeroxPrime short read: {} bytes", n)); None }
+                    Err(e) => { log::log(&format!("AeroxPrime read error: {}", e)); None }
                 }
             }
             BatteryKind::Rival3Or650 => {
-                let pkt_3 = [0x00, 0xAA, 0x01];
                 let mut req_64 = [0u8; 64];
                 req_64[0] = 0x00;
                 req_64[1] = 0xAA;
                 req_64[2] = 0x01;
 
-                let write_ok = device.write(&pkt_3).is_ok()
-                    || device.write(&req_64).is_ok()
-                    || device.send_feature_report(&pkt_3).is_ok()
-                    || device.send_feature_report(&[0x02, 0xAA, 0x01]).is_ok();
+                let write_ok = device.write(&req_64).is_ok()
+                    || device.write(&[0x00, 0xAA, 0x01]).is_ok()
+                    || device.send_feature_report(&[0x00, 0xAA, 0x01]).is_ok();
 
                 if !write_ok {
                     return None;
@@ -411,9 +407,9 @@ impl MouseManager {
                         return Self::decode_rival3_650_response(&res[..read_len]);
                     }
                 }
+                None
             }
         }
-        None
     }
 
     fn decode_aerox_prime_response(res: &[u8]) -> Option<(Option<u8>, bool)> {
