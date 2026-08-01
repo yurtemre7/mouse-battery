@@ -1,5 +1,7 @@
 use hidapi::{DeviceInfo, HidApi, HidDevice};
 use std::fmt;
+use std::collections::VecDeque;
+use chrono::{DateTime, Utc};
 use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
@@ -11,6 +13,7 @@ pub struct BatteryInfo {
     pub name: String,
     pub level: Option<u8>,
     pub is_charging: bool,
+    pub estimated_time: Option<String>,
 }
 
 impl fmt::Display for BatteryInfo {
@@ -19,12 +22,136 @@ impl fmt::Display for BatteryInfo {
             .level
             .map(|l| format!("{}%", l))
             .unwrap_or_else(|| "N/A".to_string());
-        let status_str = if self.is_charging {
-            "Charging"
+        let mut status_str = if self.is_charging {
+            "Charging".to_string()
         } else {
-            "Discharging"
+            "Discharging".to_string()
         };
+
+        if let Some(est) = &self.estimated_time {
+            status_str.push_str(&format!(", {}", est));
+        }
+
         write!(f, "{}: {} ({})", self.name, level_str, status_str)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BatterySample {
+    pub timestamp: DateTime<Utc>,
+    pub level: u8,
+    pub is_charging: bool,
+}
+
+#[derive(Debug, Default)]
+pub struct BatteryTracker {
+    samples: VecDeque<BatterySample>,
+    last_charging_state: Option<bool>,
+}
+
+impl BatteryTracker {
+    pub fn new() -> Self {
+        Self {
+            samples: VecDeque::new(),
+            last_charging_state: None,
+        }
+    }
+
+    pub fn add_sample(&mut self, level: u8, is_charging: bool) {
+        let now = Utc::now();
+
+        if self.last_charging_state != Some(is_charging) {
+            self.samples.clear();
+            self.last_charging_state = Some(is_charging);
+        }
+
+        if self.samples.is_empty() || self.samples.back().map_or(true, |s| s.level != level) {
+            self.samples.push_back(BatterySample {
+                timestamp: now,
+                level,
+                is_charging,
+            });
+
+            if self.samples.len() > 20 {
+                self.samples.pop_front();
+            }
+        }
+    }
+
+    #[cfg(test)]
+    pub fn add_sample_with_time(&mut self, level: u8, is_charging: bool, timestamp: DateTime<Utc>) {
+        if self.last_charging_state != Some(is_charging) {
+            self.samples.clear();
+            self.last_charging_state = Some(is_charging);
+        }
+
+        if self.samples.is_empty() || self.samples.back().map_or(true, |s| s.level != level) {
+            self.samples.push_back(BatterySample {
+                timestamp,
+                level,
+                is_charging,
+            });
+
+            if self.samples.len() > 20 {
+                self.samples.pop_front();
+            }
+        }
+    }
+
+    pub fn estimate_time(&self) -> Option<String> {
+        if self.samples.len() < 2 {
+            return None;
+        }
+
+        let first = self.samples.front()?;
+        let last = self.samples.back()?;
+
+        let time_diff_sec = (last.timestamp - first.timestamp).num_seconds();
+        if time_diff_sec < 5 {
+            return None;
+        }
+
+        let is_charging = last.is_charging;
+        let level_diff = (last.level as i32) - (first.level as i32);
+
+        if is_charging {
+            if level_diff <= 0 || last.level >= 100 {
+                return None;
+            }
+            let rate_per_sec = (level_diff as f64) / (time_diff_sec as f64);
+            let needed_percent = (100 - last.level) as f64;
+            let total_sec_remaining = needed_percent / rate_per_sec;
+
+            let minutes = (total_sec_remaining / 60.0).round() as i64;
+            if minutes <= 0 {
+                return None;
+            }
+            if minutes < 60 {
+                Some(format!("Full in ~{}m", minutes))
+            } else {
+                let hours = minutes / 60;
+                let mins = minutes % 60;
+                Some(format!("Full in ~{}h {}m", hours, mins))
+            }
+        } else {
+            if level_diff >= 0 || last.level == 0 {
+                return None;
+            }
+            let rate_per_sec = (-level_diff as f64) / (time_diff_sec as f64);
+            let total_sec_remaining = (last.level as f64) / rate_per_sec;
+
+            let minutes = (total_sec_remaining / 60.0).round() as i64;
+            if minutes <= 0 {
+                return None;
+            }
+            if minutes < 60 {
+                Some(format!("~{}m left", minutes))
+            } else {
+                let hours = minutes / 60;
+                let mins = minutes % 60;
+                Some(format!("~{}h {}m left", hours, mins))
+            }
+        }
     }
 }
 
@@ -40,6 +167,7 @@ pub struct MouseManager {
     mock_charging: bool,
     api: Option<HidApi>,
     cached_device: Option<ActiveDevice>,
+    tracker: BatteryTracker,
 }
 
 fn get_interface_number(info: &DeviceInfo) -> i32 {
@@ -80,6 +208,7 @@ impl MouseManager {
             mock_charging: false,
             api,
             cached_device: None,
+            tracker: BatteryTracker::new(),
         }
     }
 
@@ -92,20 +221,30 @@ impl MouseManager {
                 self.mock_level = if current <= 5 { 100 } else { current - 1 };
             }
 
+            self.tracker.add_sample(self.mock_level, self.mock_charging);
+            let estimated_time = self.tracker.estimate_time();
+
             return Ok(BatteryInfo {
                 name: "SteelSeries Aerox 3 Wireless (Mock)".to_string(),
                 level: Some(self.mock_level),
                 is_charging: self.mock_charging,
+                estimated_time,
             });
         }
 
         // 1. Try polling existing open cached device handle
         if let Some(active) = &self.cached_device {
             if let Some((level, is_charging)) = Self::query_device_battery(&active.device, active.kind) {
+                if let Some(lvl) = level {
+                    self.tracker.add_sample(lvl, is_charging);
+                }
+                let estimated_time = self.tracker.estimate_time();
+
                 return Ok(BatteryInfo {
                     name: active.name.clone(),
                     level,
                     is_charging,
+                    estimated_time,
                 });
             }
         }
@@ -140,7 +279,12 @@ impl MouseManager {
 
                         if let Ok(device) = device_info.open_device(api) {
                             if let Some((level, is_charging)) = Self::query_device_battery(&device, kind) {
+                                if let Some(lvl) = level {
+                                    self.tracker.add_sample(lvl, is_charging);
+                                }
+                                let estimated_time = self.tracker.estimate_time();
                                 let name = prof.name.to_string();
+
                                 self.cached_device = Some(ActiveDevice {
                                     device,
                                     name: name.clone(),
@@ -151,6 +295,7 @@ impl MouseManager {
                                     name,
                                     level,
                                     is_charging,
+                                    estimated_time,
                                 });
                             }
                         }
@@ -159,6 +304,10 @@ impl MouseManager {
                     // Fallback for unlisted SteelSeries devices
                     if let Ok(device) = device_info.open_device(api) {
                         if let Some((level, is_charging)) = Self::query_generic_fallback(&device) {
+                            if let Some(lvl) = level {
+                                self.tracker.add_sample(lvl, is_charging);
+                            }
+                            let estimated_time = self.tracker.estimate_time();
                             let name = device_info
                                 .product_string()
                                 .unwrap_or("SteelSeries Mouse")
@@ -168,6 +317,7 @@ impl MouseManager {
                                 name,
                                 level,
                                 is_charging,
+                                estimated_time,
                             });
                         }
                     }
@@ -308,26 +458,21 @@ mod tests {
 
     #[test]
     fn test_decode_aerox_prime_windows_format() {
-        // Windows hidapi includes Report ID 0x00 at res[0]
-        // 100% discharging: res[0]=0x00, res[1]=0x15, res[2]=21 (raw 21 -> (21-1)*5 = 100%)
         let res_100 = [0x00, 0x15, 21];
         let decoded = MouseManager::decode_aerox_prime_response(&res_100).expect("Should decode");
         assert_eq!(decoded.0, Some(100));
         assert_eq!(decoded.1, false);
 
-        // 85% discharging: res[2]=18 (raw 18 -> (18-1)*5 = 85%)
         let res_85 = [0x00, 0x15, 18];
         let decoded = MouseManager::decode_aerox_prime_response(&res_85).expect("Should decode");
         assert_eq!(decoded.0, Some(85));
         assert_eq!(decoded.1, false);
 
-        // 50% charging: res[2] = 11 | 0x80 = 139
         let res_50_charging = [0x00, 0x15, 11 | 0x80];
         let decoded = MouseManager::decode_aerox_prime_response(&res_50_charging).expect("Should decode");
         assert_eq!(decoded.0, Some(50));
         assert_eq!(decoded.1, true);
 
-        // N/A / OFF: res[2] = 0
         let res_off = [0x00, 0x15, 0];
         let decoded = MouseManager::decode_aerox_prime_response(&res_off);
         assert!(decoded.is_none());
@@ -335,13 +480,11 @@ mod tests {
 
     #[test]
     fn test_decode_aerox_prime_macos_format() {
-        // macOS hidapi raw payload: res[0]=0x15, res[1]=18 (85% discharging)
         let res_85 = [0x15, 18];
         let decoded = MouseManager::decode_aerox_prime_response(&res_85).expect("Should decode");
         assert_eq!(decoded.0, Some(85));
         assert_eq!(decoded.1, false);
 
-        // macOS 50% charging: res[1] = 11 | 0x80
         let res_50_charging = [0x15, 11 | 0x80];
         let decoded = MouseManager::decode_aerox_prime_response(&res_50_charging).expect("Should decode");
         assert_eq!(decoded.0, Some(50));
@@ -350,7 +493,6 @@ mod tests {
 
     #[test]
     fn test_decode_rival3_650_windows_format() {
-        // Windows format: res[0]=0x00, res[1]=level, res[2]=0, res[3]=charging_flag
         let res_75 = [0x00, 75, 0, 0];
         let decoded = MouseManager::decode_rival3_650_response(&res_75).expect("Should decode");
         assert_eq!(decoded.0, Some(75));
@@ -364,7 +506,6 @@ mod tests {
 
     #[test]
     fn test_decode_rival3_650_macos_format() {
-        // macOS format: res[0]=level, res[1]=0, res[2]=charging_flag
         let res_75 = [75, 0, 0];
         let decoded = MouseManager::decode_rival3_650_response(&res_75).expect("Should decode");
         assert_eq!(decoded.0, Some(75));
@@ -380,10 +521,36 @@ mod tests {
     fn test_mock_mouse_manager_progression() {
         let mut manager = MouseManager::new(true);
         let info1 = manager.fetch_battery().expect("Mock battery should fetch");
-        assert_eq!(info1.level, Some(84)); // starts at 85, decreases by 1
+        assert_eq!(info1.level, Some(84));
         assert_eq!(info1.is_charging, false);
 
         let info2 = manager.fetch_battery().expect("Mock battery should fetch");
         assert_eq!(info2.level, Some(83));
+    }
+
+    #[test]
+    fn test_battery_tracker_charging_estimate() {
+        let mut tracker = BatteryTracker::new();
+        let t0 = Utc::now();
+        let t1 = t0 + chrono::Duration::seconds(300); // 5 mins later
+
+        tracker.add_sample_with_time(70, true, t0);
+        tracker.add_sample_with_time(75, true, t1); // 5% gained in 300s -> 1% per min
+
+        let estimate = tracker.estimate_time().expect("Should have estimate");
+        assert_eq!(estimate, "Full in ~25m");
+    }
+
+    #[test]
+    fn test_battery_tracker_discharging_estimate() {
+        let mut tracker = BatteryTracker::new();
+        let t0 = Utc::now();
+        let t1 = t0 + chrono::Duration::seconds(3600); // 1 hour later
+
+        tracker.add_sample_with_time(80, false, t0);
+        tracker.add_sample_with_time(75, false, t1); // 5% lost in 1h -> 5% per hour -> 15 hours remaining for 75%
+
+        let estimate = tracker.estimate_time().expect("Should have estimate");
+        assert_eq!(estimate, "~15h 0m left");
     }
 }
