@@ -7,6 +7,7 @@ mod hid;
 mod icon;
 mod log;
 mod menu;
+pub mod protocol;
 
 use clap::Parser;
 
@@ -172,7 +173,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.2.1 (Rust System Tray) | mock={}", args.mock));
+    log::log(&format!("Starting SteelMouse v2.3.0 (Rust System Tray) | mock={}", args.mock));
     if args.mock {
         println!("Running in MOCK mode!");
     }

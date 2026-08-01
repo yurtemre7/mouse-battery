@@ -1,6 +1,6 @@
 [project]
 name = "mouse-battery"
-version = "2.2.1"
+version = "2.3.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"

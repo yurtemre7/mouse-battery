@@ -1,0 +1,643 @@
+// Generated from rivalcfg profiles
+#[allow(dead_code)]
+pub struct MouseProfile {
+    pub name: &'static str,
+    pub vendor_id: u16,
+    pub product_id: u16,
+    pub endpoint: u8,
+    pub battery_kind: Option<BatteryKind>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum BatteryKind {
+    /// Command 0x92 (146) or 0xD2 (210) - Aerox 3/5/9, Prime / Prime Mini
+    AeroxPrime { command: u8 },
+    /// Command [0xAA, 0x01] (170, 1) - Rival 3 Wireless, Rival 650
+    Rival3Or650,
+}
+
+pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
+    match (vendor_id, product_id) {
+        (0x1038, 0x1836) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3",
+            vendor_id: 0x1038,
+            product_id: 0x1836,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x183a) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x183a,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x187a) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x187a,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1838) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1838,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1878) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1878,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1890) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Gen 2 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1890,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1892) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Gen 2 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1892,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1850) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5",
+            vendor_id: 0x1038,
+            product_id: 0x1850,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1854) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1854,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x185e) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless Destiny 2 Edition (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x185e,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1862) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless Diablo IV Edition (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1862,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1852) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1852,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x185c) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless Destiny 2 Edition (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x185c,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1860) => Some(MouseProfile {
+            name: "SteelSeries Aerox 5 Wireless Diablo IV Edition (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1860,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x185a) => Some(MouseProfile {
+            name: "SteelSeries Aerox 9 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x185a,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1876) => Some(MouseProfile {
+            name: "SteelSeries Aerox 9 Wireless WOW Edition (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1876,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1858) => Some(MouseProfile {
+            name: "SteelSeries Aerox 9 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1858,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1874) => Some(MouseProfile {
+            name: "SteelSeries Aerox 9 Wireless WOW Edition (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1874,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x137a) => Some(MouseProfile {
+            name: "SteelSeries Kana v2",
+            vendor_id: 0x1038,
+            product_id: 0x137a,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1366) => Some(MouseProfile {
+            name: "SteelSeries Kinzu v2",
+            vendor_id: 0x1038,
+            product_id: 0x1366,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1378) => Some(MouseProfile {
+            name: "SteelSeries Kinzu v2",
+            vendor_id: 0x1038,
+            product_id: 0x1378,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x182e) => Some(MouseProfile {
+            name: "SteelSeries Prime",
+            vendor_id: 0x1038,
+            product_id: 0x182e,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x182a) => Some(MouseProfile {
+            name: "SteelSeries Prime Rainbow 6 Siege Black Ice Edition",
+            vendor_id: 0x1038,
+            product_id: 0x182a,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1856) => Some(MouseProfile {
+            name: "SteelSeries Prime CS:GO Neo Noir Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1856,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x184d) => Some(MouseProfile {
+            name: "SteelSeries Prime Mini",
+            vendor_id: 0x1038,
+            product_id: 0x184d,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x182c) => Some(MouseProfile {
+            name: "SteelSeries Prime+",
+            vendor_id: 0x1038,
+            product_id: 0x182c,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1842) => Some(MouseProfile {
+            name: "SteelSeries Prime Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1842,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x184a) => Some(MouseProfile {
+            name: "SteelSeries Prime Mini Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x184a,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
+        (0x1038, 0x1840) => Some(MouseProfile {
+            name: "SteelSeries Prime Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1840,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1848) => Some(MouseProfile {
+            name: "SteelSeries Prime Mini Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1848,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1824) => Some(MouseProfile {
+            name: "SteelSeries Rival 3",
+            vendor_id: 0x1038,
+            product_id: 0x1824,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x184c) => Some(MouseProfile {
+            name: "SteelSeries Rival 3 (firmware v0.37.0.0)",
+            vendor_id: 0x1038,
+            product_id: 0x184c,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1870) => Some(MouseProfile {
+            name: "SteelSeries Rival 3 Gen 2",
+            vendor_id: 0x1038,
+            product_id: 0x1870,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1830) => Some(MouseProfile {
+            name: "SteelSeries Rival 3 Wireless (2.4 GHz mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1830,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::Rival3Or650),
+        }),
+        (0x1038, 0x1872) => Some(MouseProfile {
+            name: "SteelSeries Rival 3 Wireless Gen 2 (2.4 GHz mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1872,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::Rival3Or650),
+        }),
+        (0x1038, 0x183c) => Some(MouseProfile {
+            name: "SteelSeries Rival 5",
+            vendor_id: 0x1038,
+            product_id: 0x183c,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x183e) => Some(MouseProfile {
+            name: "SteelSeries Rival 5 Destiny Edition",
+            vendor_id: 0x1038,
+            product_id: 0x183e,
+            endpoint: 3,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1706) => Some(MouseProfile {
+            name: "SteelSeries Rival 95",
+            vendor_id: 0x1038,
+            product_id: 0x1706,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1707) => Some(MouseProfile {
+            name: "SteelSeries Rival 95 MSI Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1707,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1704) => Some(MouseProfile {
+            name: "SteelSeries Rival 95 PC Bang",
+            vendor_id: 0x1038,
+            product_id: 0x1704,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1708) => Some(MouseProfile {
+            name: "SteelSeries Rival 100 PC Bang",
+            vendor_id: 0x1038,
+            product_id: 0x1708,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1702) => Some(MouseProfile {
+            name: "SteelSeries Rival 100",
+            vendor_id: 0x1038,
+            product_id: 0x1702,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x170a) => Some(MouseProfile {
+            name: "SteelSeries Rival 100 (Dell China)",
+            vendor_id: 0x1038,
+            product_id: 0x170a,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x170b) => Some(MouseProfile {
+            name: "SteelSeries Rival 100 Dota 2 Edition (retail)",
+            vendor_id: 0x1038,
+            product_id: 0x170b,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x170c) => Some(MouseProfile {
+            name: "SteelSeries Rival 100 Dota 2 Edition (Lenovo)",
+            vendor_id: 0x1038,
+            product_id: 0x170c,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1814) => Some(MouseProfile {
+            name: "SteelSeries Rival 105",
+            vendor_id: 0x1038,
+            product_id: 0x1814,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1729) => Some(MouseProfile {
+            name: "SteelSeries Rival 110",
+            vendor_id: 0x1038,
+            product_id: 0x1729,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1816) => Some(MouseProfile {
+            name: "SteelSeries Rival 106",
+            vendor_id: 0x1038,
+            product_id: 0x1816,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1384) => Some(MouseProfile {
+            name: "SteelSeries Rival",
+            vendor_id: 0x1038,
+            product_id: 0x1384,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1392) => Some(MouseProfile {
+            name: "SteelSeries Rival Dota 2 Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1392,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1710) => Some(MouseProfile {
+            name: "SteelSeries Rival 300",
+            vendor_id: 0x1038,
+            product_id: 0x1710,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1712) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 Fallout 4 Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1712,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x171c) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 Evil Geniuses Edition",
+            vendor_id: 0x1038,
+            product_id: 0x171c,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1394) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 CS:GO Fade Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1394,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x171a) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 CS:GO Hyper Beast Edition",
+            vendor_id: 0x1038,
+            product_id: 0x171a,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1716) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 CS:GO Fade Edition (stm32)",
+            vendor_id: 0x1038,
+            product_id: 0x1716,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1714) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 Acer Predator Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1714,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1718) => Some(MouseProfile {
+            name: "SteelSeries Rival 300 HP OMEN Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1718,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1810) => Some(MouseProfile {
+            name: "SteelSeries Rival 300S",
+            vendor_id: 0x1038,
+            product_id: 0x1810,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1720) => Some(MouseProfile {
+            name: "SteelSeries Rival 310",
+            vendor_id: 0x1038,
+            product_id: 0x1720,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x171e) => Some(MouseProfile {
+            name: "SteelSeries Rival 310 CS:GO Howl Edition",
+            vendor_id: 0x1038,
+            product_id: 0x171e,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1736) => Some(MouseProfile {
+            name: "SteelSeries Rival 310 PUBG Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1736,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x170e) => Some(MouseProfile {
+            name: "SteelSeries Rival 500",
+            vendor_id: 0x1038,
+            product_id: 0x170e,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1724) => Some(MouseProfile {
+            name: "SteelSeries Rival 600",
+            vendor_id: 0x1038,
+            product_id: 0x1724,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x172e) => Some(MouseProfile {
+            name: "SteelSeries Rival 600 Dota 2 Edition",
+            vendor_id: 0x1038,
+            product_id: 0x172e,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x172b) => Some(MouseProfile {
+            name: "SteelSeries Rival 650 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x172b,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::Rival3Or650),
+        }),
+        (0x1038, 0x1726) => Some(MouseProfile {
+            name: "SteelSeries Rival 650 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1726,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::Rival3Or650),
+        }),
+        (0x1038, 0x1700) => Some(MouseProfile {
+            name: "SteelSeries Rival 700",
+            vendor_id: 0x1038,
+            product_id: 0x1700,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1730) => Some(MouseProfile {
+            name: "SteelSeries Rival 710",
+            vendor_id: 0x1038,
+            product_id: 0x1730,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1722) => Some(MouseProfile {
+            name: "SteelSeries Sensei 310",
+            vendor_id: 0x1038,
+            product_id: 0x1722,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1369) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW]",
+            vendor_id: 0x1038,
+            product_id: 0x1369,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1362) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW] Diablo III Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1362,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x136d) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW] Guild Wars 2 Edition",
+            vendor_id: 0x1038,
+            product_id: 0x136d,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x136f) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW] CoD Black Ops II Edition",
+            vendor_id: 0x1038,
+            product_id: 0x136f,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1380) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW] World of Tanks Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1380,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1390) => Some(MouseProfile {
+            name: "SteelSeries Sensei [RAW] Heroes of the Storm Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1390,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1832) => Some(MouseProfile {
+            name: "SteelSeries Sensei TEN",
+            vendor_id: 0x1038,
+            product_id: 0x1832,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        (0x1038, 0x1834) => Some(MouseProfile {
+            name: "SteelSeries Sensei TEN CS:GO Neon Rider Edition",
+            vendor_id: 0x1038,
+            product_id: 0x1834,
+            endpoint: 0,
+            battery_kind: None,
+        }),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_all_known_product_ids() {
+        let pids: &[u16] = &[
+            0x1836, 0x183a, 0x187a, 0x1838, 0x1878, 0x1890, 0x1892, 0x1850, 0x1854, 0x185e,
+            0x1862, 0x1852, 0x185c, 0x1860, 0x185a, 0x1876, 0x1858, 0x1874, 0x137a, 0x1366,
+            0x1378, 0x182e, 0x182a, 0x1856, 0x184d, 0x182c, 0x1842, 0x184a, 0x1840, 0x1848,
+            0x1824, 0x184c, 0x1870, 0x1830, 0x1872, 0x183c, 0x183e, 0x1706, 0x1707, 0x1704,
+            0x1708, 0x1702, 0x170a, 0x170b, 0x170c, 0x1814, 0x1729, 0x1816, 0x1384, 0x1392,
+            0x1710, 0x1712, 0x171c, 0x1394, 0x171a, 0x1716, 0x1714, 0x1718, 0x1810, 0x1720,
+            0x171e, 0x1736, 0x170e, 0x1724, 0x172e, 0x172b, 0x1726, 0x1700, 0x1730, 0x1722,
+            0x1369, 0x1362, 0x136d, 0x136f, 0x1380, 0x1390, 0x1832, 0x1834,
+        ];
+
+        for &pid in pids {
+            let prof = get_profile(0x1038, pid)
+                .unwrap_or_else(|| panic!("Profile for 0x1038:0x{:04x} not found", pid));
+            assert_eq!(prof.vendor_id, 0x1038);
+            assert_eq!(prof.product_id, pid);
+            assert!(!prof.name.is_empty(), "Name for PID 0x{:04x} is empty", pid);
+        }
+    }
+
+    #[test]
+    fn test_wireless_battery_mice_have_battery_kind() {
+        let battery_pids: &[u16] = &[
+            0x1838, // Aerox 3 Wireless 2.4GHz
+            0x1890, // Aerox 3 Gen 2 Wireless 2.4GHz
+            0x1852, // Aerox 5 Wireless 2.4GHz
+            0x1858, // Aerox 9 Wireless 2.4GHz
+            0x1840, // Prime Wireless 2.4GHz
+            0x1848, // Prime Mini Wireless 2.4GHz
+            0x1830, // Rival 3 Wireless 2.4GHz
+            0x1872, // Rival 3 Wireless Gen 2 2.4GHz
+            0x1726, // Rival 650 Wireless 2.4GHz
+        ];
+
+        for &pid in battery_pids {
+            let prof = get_profile(0x1038, pid).expect("Profile missing");
+            assert!(
+                prof.battery_kind.is_some(),
+                "PID 0x{:04x} ({}) should have battery_kind",
+                pid,
+                prof.name
+            );
+        }
+    }
+
+    #[test]
+    fn test_wired_mice_have_no_battery_kind() {
+        let wired_pids: &[u16] = &[
+            0x1824, // Rival 3
+            0x1702, // Rival 100
+            0x1710, // Rival 300
+            0x1832, // Sensei TEN
+            0x1366, // Kinzu v2
+            0x137a, // Kana v2
+        ];
+
+        for &pid in wired_pids {
+            let prof = get_profile(0x1038, pid).expect("Profile missing");
+            assert!(
+                prof.battery_kind.is_none(),
+                "PID 0x{:04x} ({}) should NOT have battery_kind",
+                pid,
+                prof.name
+            );
+        }
+    }
+}
