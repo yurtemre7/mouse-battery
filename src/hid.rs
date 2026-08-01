@@ -372,21 +372,22 @@ impl MouseManager {
                 }
 
                 // Read up to 8 HID reports, skipping non-battery events.
-                // A valid battery response has: res[0]==command echo, res[1]==0x00 (success status).
-                // Mouse movement/button events have non-zero res[1] and must be skipped.
+                // A valid battery response starts with:
+                //   - res[0] == command echo (e.g. 0xD2 / 210)
+                //   - OR res[0] == 0x00 and res[1] == command echo (leading Report ID 0x00)
                 let mut res = [0u8; 64];
                 for attempt in 0..8 {
                     match device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                        Ok(n) if n >= 3 => {
+                        Ok(n) if n >= 2 => {
                             log::log(&format!("AeroxPrime attempt {} raw[0..8]={:?}", attempt, &res[..n.min(8)]));
-                            // Valid battery response: res[0] is command echo or report ID 0x00,
-                            // and the status byte (res[1] when res[0]==command, or res[2] when res[0]==0) is 0x00.
-                            let is_battery_response = (res[0] == command && res[1] == 0x00)
-                                || (res[0] == 0x00 && res[1] == command && res[2] == 0x00 && n >= 4);
+                            let is_battery_response = res[0] == command
+                                || (res[0] == 0x00 && n >= 3 && res[1] == command);
                             if is_battery_response {
-                                return Self::decode_aerox_prime_response(&res[..n]);
+                                if let Some(decoded) = Self::decode_aerox_prime_response(&res[..n]) {
+                                    return Some(decoded);
+                                }
                             }
-                            log::log(&format!("  -> Skipping (not a battery response, res[1]=0x{:02X})", res[1]));
+                            log::log(&format!("  -> Skipping (res[0]=0x{:02X}, res[1]=0x{:02X})", res[0], res[1]));
                         }
                         Ok(0) | Err(_) => break, // Timeout or error - no more data
                         Ok(n) => { log::log(&format!("AeroxPrime short read: {} bytes", n)); break; }
@@ -506,6 +507,12 @@ mod tests {
         let res_off = [0x00, 0x15, 0];
         let decoded = MouseManager::decode_aerox_prime_response(&res_off);
         assert!(decoded.is_none());
+
+        // Windows direct command echo format: [0xD2 (210), battery_byte (18), 0, ...] -> 85%
+        let res_windows_direct = [210u8, 18, 0, 49, 46, 52, 0, 0];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_windows_direct).expect("Should decode direct echo format");
+        assert_eq!(decoded.0, Some(85));
+        assert_eq!(decoded.1, false);
     }
 
     #[test]
