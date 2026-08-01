@@ -561,7 +561,7 @@ impl eframe::App for SteelMouseApp {
 
             ui.add_space(8.0);
             ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new("SteelMouse v2.1.0 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
+                ui.label(egui::RichText::new("SteelMouse v2.1.1 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
             });
         });
     }
