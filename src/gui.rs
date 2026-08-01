@@ -128,8 +128,6 @@ pub struct SteelMouseApp {
     tray_menu: Arc<Mutex<TrayMenu>>,
     flags: Arc<TrayFlags>,
     window_visible: bool,
-    /// True only for the very first update() call - used to apply Win32 tray setup
-    first_frame: bool,
 }
 
 impl SteelMouseApp {
@@ -297,17 +295,11 @@ impl SteelMouseApp {
 
         // On Windows: keep eframe window "visible" but off-screen so update() keeps firing.
         // On macOS: we can safely hide it via Visible(false) since Cocoa handles repaints differently.
-        #[cfg(target_os = "windows")]
         if start_hidden {
-            // Move far off-screen + shrink so it doesn't appear (10x10 avoids Windows min-size rejection)
-            egui_ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
-            egui_ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([10.0, 10.0].into()));
-            egui_ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
-        }
+            #[cfg(target_os = "macos")]
+            set_macos_activation_policy(true);
 
-        #[cfg(not(target_os = "windows"))]
-        if start_hidden {
-            egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
         }
 
         Self {
@@ -321,7 +313,6 @@ impl SteelMouseApp {
             tray_menu,
             flags,
             window_visible: !start_hidden,
-            first_frame: true,
         }
     }
 
@@ -367,20 +358,13 @@ impl SteelMouseApp {
         #[cfg(target_os = "macos")]
         set_macos_activation_policy(false);
 
-        // Restore window position/size on Windows (we moved it off-screen)
-        #[cfg(target_os = "windows")]
-        {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(true));
-            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([440.0, 420.0].into()));
-            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([200.0, 200.0].into()));
-            // Show in taskbar + bring to front via Win32
-            win32::show_in_taskbar();
-            win32::focus();
-        }
-
         ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
         ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
         ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+
+        #[cfg(target_os = "windows")]
+        win32::focus();
+
         ctx.request_repaint();
     }
 
@@ -391,32 +375,12 @@ impl SteelMouseApp {
         #[cfg(target_os = "macos")]
         set_macos_activation_policy(true);
 
-        #[cfg(target_os = "windows")]
-        {
-            // Remove from taskbar before moving off-screen
-            win32::hide_from_taskbar();
-            ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
-            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([10.0, 10.0].into()));
-            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
-        }
-
-        #[cfg(not(target_os = "windows"))]
         ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
     }
 }
 
 impl eframe::App for SteelMouseApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // On the very first frame: apply Win32 taskbar setup (HWND is now available)
-        if self.first_frame {
-            self.first_frame = false;
-            #[cfg(target_os = "windows")]
-            if !self.window_visible {
-                win32::hide_from_taskbar();
-                log::log("first_frame: applied WS_EX_TOOLWINDOW (hidden from taskbar)");
-            }
-        }
-
         // Always process battery messages regardless of window visibility
         self.process_battery_messages();
 
@@ -561,7 +525,7 @@ impl eframe::App for SteelMouseApp {
 
             ui.add_space(8.0);
             ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new("SteelMouse v2.1.2 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
+                ui.label(egui::RichText::new("SteelMouse v2.1.3 • 78 SteelSeries Product IDs Supported").small().color(egui::Color32::DARK_GRAY));
             });
         });
     }

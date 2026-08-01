@@ -190,7 +190,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.1.2 (Rust) | mock={} gui={}", args.mock, args.gui));
+    log::log(&format!("Starting SteelMouse v2.1.3 (Rust) | mock={} gui={}", args.mock, args.gui));
     if args.mock {
         println!("Running in MOCK mode!");
     }
