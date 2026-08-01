@@ -87,6 +87,18 @@ impl SteelMouseApp {
         let flags = TrayFlags::new();
         let egui_ctx = cc.egui_ctx.clone();
 
+        // --- Thread 0: Ticker - forces update() to be called even when window is off-screen ---
+        {
+            let ticker_ctx = egui_ctx.clone();
+            thread::spawn(move || {
+                log::log("ticker thread started");
+                loop {
+                    thread::sleep(Duration::from_millis(250));
+                    ticker_ctx.request_repaint();
+                }
+            });
+        }
+
         // --- Build tray icon & menu ---
         let initial_icon = create_tray_icon(None, false, config.display_mode);
         let tray_menu = Arc::new(Mutex::new(TrayMenu::new(
@@ -226,9 +238,9 @@ impl SteelMouseApp {
         // On macOS: we can safely hide it via Visible(false) since Cocoa handles repaints differently.
         #[cfg(target_os = "windows")]
         if start_hidden {
-            // Move far off-screen + make tiny so it doesn't appear on taskbar
+            // Move far off-screen + shrink so it doesn't appear (10x10 avoids Windows min-size rejection)
             egui_ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
-            egui_ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([1.0, 1.0].into()));
+            egui_ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([10.0, 10.0].into()));
             egui_ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
         }
 
@@ -298,7 +310,7 @@ impl SteelMouseApp {
         {
             ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(true));
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([440.0, 420.0].into()));
-            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([100.0, 100.0].into()));
+            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([200.0, 200.0].into()));
         }
 
         ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
@@ -317,7 +329,7 @@ impl SteelMouseApp {
         #[cfg(target_os = "windows")]
         {
             ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
-            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([1.0, 1.0].into()));
+            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([10.0, 10.0].into()));
             ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
         }
 
@@ -350,6 +362,12 @@ impl eframe::App for SteelMouseApp {
         ctx.request_repaint_after(Duration::from_secs(1));
 
         if !self.window_visible {
+            // Log occasionally to confirm update() is still ticking while hidden
+            static HIDDEN_TICK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let tick = HIDDEN_TICK.fetch_add(1, Ordering::Relaxed);
+            if tick % 20 == 0 {
+                log::log(&format!("update() hidden tick #{} battery={:?}", tick, self.battery_info.as_ref().map(|b| b.level)));
+            }
             // Render nothing but keep eframe ticking
             egui::CentralPanel::default().show(ctx, |_ui| {});
             return;
