@@ -67,7 +67,14 @@ impl SteelMouseApp {
 
         let egui_ctx = cc.egui_ctx.clone();
 
-        // Spawn background polling worker thread (All HID USB operations stay off the main GUI thread)
+        // 1. Ticker thread to wake up Win32 / macOS event loop continuously (even when hidden in tray)
+        let ticker_ctx = cc.egui_ctx.clone();
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_millis(200));
+            ticker_ctx.request_repaint();
+        });
+
+        // 2. Spawn background polling worker thread (All HID USB operations stay off the main GUI thread)
         thread::spawn(move || {
             let mut mouse_manager = MouseManager::new(mock_mode);
 
