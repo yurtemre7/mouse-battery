@@ -1,11 +1,12 @@
 use eframe::egui;
 use chrono::Local;
 use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tray_icon::{TrayIcon, TrayIconBuilder, TrayIconEvent};
-use muda::{MenuEvent, MenuEventReceiver};
+use tray_icon::{TrayIcon, TrayIconBuilder};
+use muda::MenuEvent;
 
 use crate::config::{AppConfig, DisplayMode};
 use crate::hid::{BatteryInfo, MouseManager};
@@ -15,6 +16,21 @@ use crate::menu::TrayMenu;
 
 enum AppMessage {
     BatteryUpdated(Result<BatteryInfo, String>, String),
+}
+
+// Shared flags set from the tray event thread, read by the eframe update() loop
+struct TrayFlags {
+    open_dashboard: AtomicBool,
+    refresh_now: AtomicBool,
+}
+
+impl TrayFlags {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            open_dashboard: AtomicBool::new(false),
+            refresh_now: AtomicBool::new(false),
+        })
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -50,8 +66,8 @@ pub struct SteelMouseApp {
     wake_tx: Sender<()>,
     rx: Receiver<AppMessage>,
     tray_icon: Option<TrayIcon>,
-    tray_menu: TrayMenu,
-    menu_receiver: &'static MenuEventReceiver,
+    tray_menu: Arc<Mutex<TrayMenu>>,
+    flags: Arc<TrayFlags>,
     window_visible: bool,
 }
 
@@ -59,90 +75,166 @@ impl SteelMouseApp {
     pub fn new(cc: &eframe::CreationContext<'_>, mock_mode: bool, start_hidden: bool) -> Self {
         cc.egui_ctx.set_visuals(egui::Visuals::dark());
 
-        let config = AppConfig::load();
-        let current_config = Arc::new(Mutex::new(config.clone()));
-        let config_polling = current_config.clone();
-
-        let (tx, rx): (Sender<AppMessage>, Receiver<AppMessage>) = channel();
-        let (wake_tx, wake_rx): (Sender<()>, Receiver<()>) = channel();
-
-        let egui_ctx = cc.egui_ctx.clone();
-
         log::log("SteelMouseApp::new() start");
 
-        // 1. Ticker thread to wake up Win32 / macOS event loop continuously (even when hidden in tray)
-        let ticker_ctx = cc.egui_ctx.clone();
-        thread::spawn(move || {
-            log::log("ticker thread started");
-            loop {
-                thread::sleep(Duration::from_millis(200));
-                ticker_ctx.request_repaint();
-            }
-        });
+        let config = AppConfig::load();
+        let current_config = Arc::new(Mutex::new(config.clone()));
+        let config_for_hid = current_config.clone();
 
-        log::log(&format!("Spawning HID worker thread (mock={})", mock_mode));
-        // 2. Spawn background polling worker thread (All HID USB operations stay off the main GUI thread)
-        thread::spawn(move || {
-            log::log("HID worker thread started");
-            let mut mouse_manager = MouseManager::new(mock_mode);
+        let (tx, rx) = channel::<AppMessage>();
+        let (wake_tx, wake_rx) = channel::<()>();
 
-            loop {
-                log::log("HID worker: calling fetch_battery");
-                let result = mouse_manager.fetch_battery();
-                log::log(&format!("HID worker: fetch_battery result={}", if result.is_ok() { "Ok" } else { "Err" }));
-                let timestamp = Local::now().format("%H:%M:%S").to_string();
+        let flags = TrayFlags::new();
+        let egui_ctx = cc.egui_ctx.clone();
 
-                let is_error = result.is_err();
-                let _ = tx.send(AppMessage::BatteryUpdated(result, timestamp));
-                egui_ctx.request_repaint();
-                log::log("HID worker: sent AppMessage, sleeping...");
-
-                let sleep_secs = if is_error {
-                    12
-                } else {
-                    let cfg = config_polling.lock().unwrap();
-                    cfg.time_delta
-                };
-
-                let mut elapsed = 0u64;
-                while elapsed < sleep_secs {
-                    if wake_rx.recv_timeout(Duration::from_secs(1)).is_ok() {
-                        break;
-                    }
-                    elapsed += 1;
-                    let current_target = {
-                        let cfg = config_polling.lock().unwrap();
-                        cfg.time_delta
-                    };
-                    if elapsed >= current_target {
-                        break;
-                    }
-                }
-            }
-        });
-
+        // --- Build tray icon & menu ---
         let initial_icon = create_tray_icon(None, false, config.display_mode);
-        let tray_menu = TrayMenu::new(
+        let tray_menu = Arc::new(Mutex::new(TrayMenu::new(
             None,
             None,
             config.time_delta,
             config.display_mode,
-        );
+        )));
 
-        let tray_icon = TrayIconBuilder::new()
-            .with_menu(Box::new(tray_menu.menu.clone()))
-            .with_tooltip("SteelMouse: Initializing...")
-            .with_icon(initial_icon)
-            .build()
-            .ok();
+        let tray_icon = {
+            let menu_lock = tray_menu.lock().unwrap();
+            TrayIconBuilder::new()
+                .with_menu(Box::new(menu_lock.menu.clone()))
+                .with_tooltip("SteelMouse: Initializing...")
+                .with_icon(initial_icon)
+                .build()
+                .ok()
+        };
 
-        let menu_receiver = MenuEvent::receiver();
+        // --- Thread 1: Tray menu event handler (independent of eframe update loop!) ---
+        // This MUST run independently so Quit and Open Dashboard work even when
+        // the eframe window is hidden and update() is not being called by winit.
+        {
+            let flags_tray = flags.clone();
+            let egui_ctx_tray = egui_ctx.clone();
+            let wake_tx_tray = wake_tx.clone();
+            let menu_rx = MenuEvent::receiver();
+            let tray_menu_ids = {
+                let m = tray_menu.lock().unwrap();
+                (
+                    m.quit_item.id().clone(),
+                    m.dashboard_item.id().clone(),
+                    m.refresh_item.id().clone(),
+                    m.mode_hover_item.id().clone(),
+                    m.mode_icon_item.id().clone(),
+                    m.interval_items.iter().map(|(&s, i)| (s, i.id().clone())).collect::<Vec<_>>(),
+                )
+            };
+            let config_tray = current_config.clone();
 
+            thread::spawn(move || {
+                log::log("tray event thread started");
+                let (quit_id, dashboard_id, refresh_id, hover_id, icon_id, interval_ids) = tray_menu_ids;
+                loop {
+                    // Block until a menu event arrives (no busy-spinning)
+                    if let Ok(event) = menu_rx.recv() {
+                        log::log(&format!("tray event: id={:?}", event.id));
+
+                        if event.id == quit_id {
+                            log::log("Quit clicked - calling exit(0)");
+                            std::process::exit(0);
+                        } else if event.id == dashboard_id {
+                            log::log("Dashboard clicked - setting flag");
+                            flags_tray.open_dashboard.store(true, Ordering::Relaxed);
+                            egui_ctx_tray.request_repaint();
+                        } else if event.id == refresh_id {
+                            log::log("Refresh clicked");
+                            flags_tray.refresh_now.store(true, Ordering::Relaxed);
+                            let _ = wake_tx_tray.send(());
+                            egui_ctx_tray.request_repaint();
+                        } else {
+                            // Check display mode / interval changes
+                            let mut cfg = config_tray.lock().unwrap().clone();
+                            let mut changed = false;
+                            if event.id == hover_id {
+                                cfg.display_mode = DisplayMode::Hover;
+                                changed = true;
+                            } else if event.id == icon_id {
+                                cfg.display_mode = DisplayMode::Icon;
+                                changed = true;
+                            } else {
+                                for (secs, id) in &interval_ids {
+                                    if event.id == *id {
+                                        cfg.time_delta = *secs;
+                                        changed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if changed {
+                                log::log(&format!("Config changed: mode={:?} interval={}s", cfg.display_mode, cfg.time_delta));
+                                cfg.save();
+                                *config_tray.lock().unwrap() = cfg;
+                                let _ = wake_tx_tray.send(());
+                                egui_ctx_tray.request_repaint();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Thread 2: HID battery polling worker ---
+        {
+            let tx2 = tx;
+            let egui_ctx2 = egui_ctx.clone();
+            thread::spawn(move || {
+                log::log("HID worker thread started");
+                let mut mouse_manager = MouseManager::new(mock_mode);
+                loop {
+                    log::log("HID worker: calling fetch_battery");
+                    let result = mouse_manager.fetch_battery();
+                    log::log(&format!("HID worker: result={}", if result.is_ok() { "Ok" } else { "Err" }));
+                    let timestamp = Local::now().format("%H:%M:%S").to_string();
+                    let is_error = result.is_err();
+                    let _ = tx2.send(AppMessage::BatteryUpdated(result, timestamp));
+                    egui_ctx2.request_repaint();
+                    log::log("HID worker: message sent, sleeping");
+
+                    let sleep_secs = if is_error {
+                        12
+                    } else {
+                        config_for_hid.lock().unwrap().time_delta
+                    };
+
+                    let mut elapsed = 0u64;
+                    while elapsed < sleep_secs {
+                        if wake_rx.recv_timeout(Duration::from_secs(1)).is_ok() {
+                            break;
+                        }
+                        elapsed += 1;
+                        if elapsed >= config_for_hid.lock().unwrap().time_delta {
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
+        // On macOS: hide dock icon when in tray mode
         if start_hidden {
             #[cfg(target_os = "macos")]
             set_macos_activation_policy(true);
+        }
 
-            cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+        // On Windows: keep eframe window "visible" but off-screen so update() keeps firing.
+        // On macOS: we can safely hide it via Visible(false) since Cocoa handles repaints differently.
+        #[cfg(target_os = "windows")]
+        if start_hidden {
+            // Move far off-screen + make tiny so it doesn't appear on taskbar
+            egui_ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
+            egui_ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([1.0, 1.0].into()));
+            egui_ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        if start_hidden {
+            egui_ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
         }
 
         Self {
@@ -154,15 +246,14 @@ impl SteelMouseApp {
             rx,
             tray_icon,
             tray_menu,
-            menu_receiver,
+            flags,
             window_visible: !start_hidden,
         }
     }
 
-    fn poll_events(&mut self, ctx: &egui::Context) {
-        // 1. Process incoming battery updates from background worker thread
+    fn process_battery_messages(&mut self) {
         while let Ok(AppMessage::BatteryUpdated(battery_res, timestamp)) = self.rx.try_recv() {
-            log::log(&format!("poll_events: received BatteryUpdated at {}", timestamp));
+            log::log(&format!("update: received BatteryUpdated at {}", timestamp));
             let (info_opt, is_charging, level_opt) = match &battery_res {
                 Ok(info) => {
                     log::log(&format!("  -> Ok: name='{}' level={:?} charging={}", info.name, info.level, info.is_charging));
@@ -181,107 +272,86 @@ impl SteelMouseApp {
 
             let cfg = self.config.lock().unwrap().clone();
             let new_icon = create_tray_icon(level_opt, is_charging, cfg.display_mode);
+
             if let Some(tray) = self.tray_icon.as_mut() {
                 let _ = tray.set_icon(Some(new_icon));
-
                 let tooltip = level_opt
                     .map(|l| format!("Battery: {}%", l))
                     .unwrap_or_else(|| "Battery: N/A".to_string());
                 let _ = tray.set_tooltip(Some(tooltip));
             }
 
-            self.tray_menu.update(
-                info_opt.as_ref(),
-                Some(&timestamp),
-                cfg.time_delta,
-                cfg.display_mode,
-            );
+            let menu = self.tray_menu.lock().unwrap();
+            menu.update(info_opt.as_ref(), Some(&timestamp), cfg.time_delta, cfg.display_mode);
+        }
+    }
+
+    fn show_window(&mut self, ctx: &egui::Context) {
+        log::log("show_window: making dashboard visible");
+        self.window_visible = true;
+
+        #[cfg(target_os = "macos")]
+        set_macos_activation_policy(false);
+
+        // Restore window position/size on Windows (we moved it off-screen)
+        #[cfg(target_os = "windows")]
+        {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(true));
+            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([440.0, 420.0].into()));
+            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([100.0, 100.0].into()));
         }
 
-        // 2. Process system tray menu clicks
-        while let Ok(event) = self.menu_receiver.try_recv() {
-            log::log(&format!("poll_events: menu event id={:?}", event.id));
-            if event.id == self.tray_menu.quit_item.id() {
-                log::log("Quit menu item clicked - exiting");
-                self.tray_icon.take();
-                std::process::exit(0);
-            }
+        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+        ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+        ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        ctx.request_repaint();
+    }
 
-            if event.id == self.tray_menu.dashboard_item.id() {
-                self.window_visible = true;
-                #[cfg(target_os = "macos")]
-                set_macos_activation_policy(false);
+    fn hide_window(&mut self, ctx: &egui::Context) {
+        log::log("hide_window: hiding dashboard to tray");
+        self.window_visible = false;
 
-                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
-                ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
-                ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
-                ctx.request_repaint();
-            } else if event.id == self.tray_menu.refresh_item.id() {
-                let _ = self.wake_tx.send(());
-            } else {
-                let mut cfg = self.config.lock().unwrap().clone();
-                let mut changed = false;
+        #[cfg(target_os = "macos")]
+        set_macos_activation_policy(true);
 
-                if event.id == self.tray_menu.mode_hover_item.id() {
-                    cfg.display_mode = DisplayMode::Hover;
-                    changed = true;
-                } else if event.id == self.tray_menu.mode_icon_item.id() {
-                    cfg.display_mode = DisplayMode::Icon;
-                    changed = true;
-                }
-
-                for (&seconds, item) in &self.tray_menu.interval_items {
-                    if event.id == item.id() {
-                        cfg.time_delta = seconds;
-                        changed = true;
-                        break;
-                    }
-                }
-
-                if changed {
-                    cfg.save();
-                    *self.config.lock().unwrap() = cfg.clone();
-
-                    let level_opt = self.battery_info.as_ref().and_then(|b| b.level);
-                    let is_charging = self.battery_info.as_ref().map(|b| b.is_charging).unwrap_or(false);
-                    let new_icon = create_tray_icon(level_opt, is_charging, cfg.display_mode);
-                    if let Some(tray) = self.tray_icon.as_mut() {
-                        let _ = tray.set_icon(Some(new_icon));
-                    }
-                    self.tray_menu.update(
-                        self.battery_info.as_ref(),
-                        self.last_timestamp.as_deref(),
-                        cfg.time_delta,
-                        cfg.display_mode,
-                    );
-                    let _ = self.wake_tx.send(());
-                }
-            }
+        #[cfg(target_os = "windows")]
+        {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(false));
+            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([1.0, 1.0].into()));
+            ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition([30000.0, 30000.0].into()));
         }
 
-        // Drain unused tray icon events
-        let tray_receiver = TrayIconEvent::receiver();
-        while let Ok(_event) = tray_receiver.try_recv() {}
+        #[cfg(not(target_os = "windows"))]
+        ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
     }
 }
 
 impl eframe::App for SteelMouseApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.poll_events(ctx);
+        // Always process battery messages regardless of window visibility
+        self.process_battery_messages();
 
-        // Handle window close (X button) -> Hide to system tray instead of exiting
-        if ctx.input(|i| i.viewport().close_requested()) {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            self.window_visible = false;
-            #[cfg(target_os = "macos")]
-            set_macos_activation_policy(true);
-
-            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+        // Check flags set by the tray event thread
+        if self.flags.open_dashboard.swap(false, Ordering::Relaxed) {
+            self.show_window(ctx);
+        }
+        if self.flags.refresh_now.swap(false, Ordering::Relaxed) {
+            let _ = self.wake_tx.send(());
         }
 
+        // Handle window X button -> hide to tray
+        if ctx.input(|i| i.viewport().close_requested()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.hide_window(ctx);
+            return;
+        }
+
+        // Keep update() alive even when hidden on Windows (we're off-screen, not truly hidden)
         ctx.request_repaint_after(Duration::from_secs(1));
 
         if !self.window_visible {
+            // Render nothing but keep eframe ticking
+            egui::CentralPanel::default().show(ctx, |_ui| {});
             return;
         }
 
@@ -332,11 +402,7 @@ impl eframe::App for SteelMouseApp {
 
                         ui.add_space(4.0);
 
-                        let status_text = if info.is_charging {
-                            "⚡ Status: Charging"
-                        } else {
-                            "🔋 Status: Discharging"
-                        };
+                        let status_text = if info.is_charging { "⚡ Status: Charging" } else { "🔋 Status: Discharging" };
                         ui.label(egui::RichText::new(status_text).size(14.0).color(egui::Color32::LIGHT_GRAY));
 
                         if let Some(est) = &info.estimated_time {
@@ -355,7 +421,7 @@ impl eframe::App for SteelMouseApp {
 
             ui.add_space(10.0);
 
-            // --- 2. Interactive Settings & Controls ---
+            // --- 2. Settings & Controls ---
             ui.group(|ui| {
                 ui.heading("⚙ Settings & Preferences");
                 ui.add_space(4.0);
