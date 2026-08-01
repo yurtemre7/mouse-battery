@@ -53,6 +53,20 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             endpoint: 3,
             battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
         }),
+        (0x1038, 0x1890) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Gen 2 Wireless (2.4 GHz wireless mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1890,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+        }),
+        (0x1038, 0x1892) => Some(MouseProfile {
+            name: "SteelSeries Aerox 3 Gen 2 Wireless (wired mode)",
+            vendor_id: 0x1038,
+            product_id: 0x1892,
+            endpoint: 3,
+            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+        }),
         (0x1038, 0x1850) => Some(MouseProfile {
             name: "SteelSeries Aerox 5",
             vendor_id: 0x1038,
