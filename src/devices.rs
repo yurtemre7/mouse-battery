@@ -8,7 +8,7 @@ pub struct MouseProfile {
     pub battery_kind: Option<BatteryKind>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BatteryKind {
     /// Command 0x92 (146) or 0xD2 (210) - Aerox 3/5/9, Prime / Prime Mini
     AeroxPrime { command: u8 },

@@ -1,4 +1,5 @@
 use hidapi::{DeviceInfo, HidApi, HidDevice};
+use crate::log;
 use std::fmt;
 use std::collections::VecDeque;
 use chrono::{DateTime, Utc};
@@ -196,8 +197,12 @@ fn get_interface_number(info: &DeviceInfo) -> i32 {
 
 impl MouseManager {
     pub fn new(mock_mode: bool) -> Self {
+        log::log(&format!("MouseManager::new(mock_mode={})", mock_mode));
         let api = if !mock_mode {
-            HidApi::new().ok()
+            match HidApi::new() {
+                Ok(a) => { log::log("HidApi::new() OK"); Some(a) }
+                Err(e) => { log::log(&format!("HidApi::new() FAILED: {}", e)); None }
+            }
         } else {
             None
         };
@@ -251,6 +256,7 @@ impl MouseManager {
 
         // 2. Cached device failed or not connected yet - clear cache & scan devices
         self.cached_device = None;
+        log::log("Scanning for SteelSeries HID devices...");
 
         let api = match &mut self.api {
             Some(api) => {
@@ -258,52 +264,69 @@ impl MouseManager {
                 api
             }
             None => {
-                let new_api = HidApi::new().map_err(|e| format!("Failed to init hidapi: {}", e))?;
+                let new_api = HidApi::new().map_err(|e| {
+                    let msg = format!("Failed to init hidapi: {}", e);
+                    log::log(&msg);
+                    msg
+                })?;
                 self.api = Some(new_api);
                 self.api.as_mut().unwrap()
             }
         };
 
+        let mut steelseries_count = 0;
         for device_info in api.device_list() {
             if device_info.vendor_id() == STEELSERIES_VENDOR_ID {
+                steelseries_count += 1;
                 let pid = device_info.product_id();
+                let iface = get_interface_number(device_info);
+                log::log(&format!(
+                    "  Found SteelSeries PID=0x{:04x} iface={} path={:?} product={:?}",
+                    pid, iface, device_info.path(), device_info.product_string()
+                ));
+
                 let profile = devices::get_profile(STEELSERIES_VENDOR_ID, pid);
 
                 if let Some(prof) = profile {
                     if let Some(kind) = prof.battery_kind {
                         // Skip non-matching interfaces to prevent OS driver locks and timeouts
-                        let iface = get_interface_number(device_info);
                         if prof.endpoint != 0 && iface >= 0 && iface != prof.endpoint as i32 {
+                            log::log(&format!("    Skipping: endpoint mismatch (need {}, got {})", prof.endpoint, iface));
                             continue;
                         }
 
-                        if let Ok(device) = device_info.open_device(api) {
-                            if let Some((level, is_charging)) = Self::query_device_battery(&device, kind) {
-                                if let Some(lvl) = level {
-                                    self.tracker.add_sample(lvl, is_charging);
+                        match device_info.open_device(api) {
+                            Err(e) => {
+                                log::log(&format!("    open_device FAILED: {}", e));
+                            }
+                            Ok(device) => {
+                                log::log(&format!("    open_device OK, querying kind={:?}", kind));
+                                match Self::query_device_battery(&device, kind) {
+                                    None => {
+                                        log::log("    query_device_battery returned None");
+                                    }
+                                    Some((level, is_charging)) => {
+                                        log::log(&format!("    SUCCESS level={:?} charging={}", level, is_charging));
+                                        if let Some(lvl) = level {
+                                            self.tracker.add_sample(lvl, is_charging);
+                                        }
+                                        let estimated_time = self.tracker.estimate_time();
+                                        let name = prof.name.to_string();
+                                        self.cached_device = Some(ActiveDevice { device, name: name.clone(), kind });
+                                        return Ok(BatteryInfo { name, level, is_charging, estimated_time });
+                                    }
                                 }
-                                let estimated_time = self.tracker.estimate_time();
-                                let name = prof.name.to_string();
-
-                                self.cached_device = Some(ActiveDevice {
-                                    device,
-                                    name: name.clone(),
-                                    kind,
-                                });
-
-                                return Ok(BatteryInfo {
-                                    name,
-                                    level,
-                                    is_charging,
-                                    estimated_time,
-                                });
                             }
                         }
+                    } else {
+                        log::log("    Profile found but no battery_kind (wired or unsupported)");
                     }
                 } else {
                     // Fallback for unlisted SteelSeries devices
+                    log::log("    No profile - trying generic fallback");
                     if let Ok(device) = device_info.open_device(api) {
                         if let Some((level, is_charging)) = Self::query_generic_fallback(&device) {
+                            log::log(&format!("    Fallback SUCCESS level={:?} charging={}", level, is_charging));
                             if let Some(lvl) = level {
                                 self.tracker.add_sample(lvl, is_charging);
                             }
@@ -312,20 +335,20 @@ impl MouseManager {
                                 .product_string()
                                 .unwrap_or("SteelSeries Mouse")
                                 .to_string();
-
-                            return Ok(BatteryInfo {
-                                name,
-                                level,
-                                is_charging,
-                                estimated_time,
-                            });
+                            return Ok(BatteryInfo { name, level, is_charging, estimated_time });
                         }
                     }
                 }
             }
         }
 
-        Err("No supported SteelSeries mouse found".to_string())
+        let err = if steelseries_count == 0 {
+            "No SteelSeries HID devices detected at all".to_string()
+        } else {
+            format!("Found {} SteelSeries devices but none returned battery data", steelseries_count)
+        };
+        log::log(&format!("fetch_battery error: {}", err));
+        Err(err)
     }
 
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {

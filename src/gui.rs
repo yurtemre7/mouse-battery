@@ -10,6 +10,7 @@ use muda::{MenuEvent, MenuEventReceiver};
 use crate::config::{AppConfig, DisplayMode};
 use crate::hid::{BatteryInfo, MouseManager};
 use crate::icon::create_tray_icon;
+use crate::log;
 use crate::menu::TrayMenu;
 
 enum AppMessage {
@@ -67,24 +68,34 @@ impl SteelMouseApp {
 
         let egui_ctx = cc.egui_ctx.clone();
 
+        log::log("SteelMouseApp::new() start");
+
         // 1. Ticker thread to wake up Win32 / macOS event loop continuously (even when hidden in tray)
         let ticker_ctx = cc.egui_ctx.clone();
-        thread::spawn(move || loop {
-            thread::sleep(Duration::from_millis(200));
-            ticker_ctx.request_repaint();
+        thread::spawn(move || {
+            log::log("ticker thread started");
+            loop {
+                thread::sleep(Duration::from_millis(200));
+                ticker_ctx.request_repaint();
+            }
         });
 
+        log::log(&format!("Spawning HID worker thread (mock={})", mock_mode));
         // 2. Spawn background polling worker thread (All HID USB operations stay off the main GUI thread)
         thread::spawn(move || {
+            log::log("HID worker thread started");
             let mut mouse_manager = MouseManager::new(mock_mode);
 
             loop {
+                log::log("HID worker: calling fetch_battery");
                 let result = mouse_manager.fetch_battery();
+                log::log(&format!("HID worker: fetch_battery result={}", if result.is_ok() { "Ok" } else { "Err" }));
                 let timestamp = Local::now().format("%H:%M:%S").to_string();
 
                 let is_error = result.is_err();
                 let _ = tx.send(AppMessage::BatteryUpdated(result, timestamp));
                 egui_ctx.request_repaint();
+                log::log("HID worker: sent AppMessage, sleeping...");
 
                 let sleep_secs = if is_error {
                     12
@@ -151,12 +162,15 @@ impl SteelMouseApp {
     fn poll_events(&mut self, ctx: &egui::Context) {
         // 1. Process incoming battery updates from background worker thread
         while let Ok(AppMessage::BatteryUpdated(battery_res, timestamp)) = self.rx.try_recv() {
+            log::log(&format!("poll_events: received BatteryUpdated at {}", timestamp));
             let (info_opt, is_charging, level_opt) = match &battery_res {
                 Ok(info) => {
+                    log::log(&format!("  -> Ok: name='{}' level={:?} charging={}", info.name, info.level, info.is_charging));
                     self.status_msg = format!("Updated at {}", timestamp);
                     (Some(info.clone()), info.is_charging, info.level)
                 }
                 Err(err) => {
+                    log::log(&format!("  -> Err: {}", err));
                     self.status_msg = format!("Error: {}", err);
                     (None, false, None)
                 }
@@ -186,8 +200,9 @@ impl SteelMouseApp {
 
         // 2. Process system tray menu clicks
         while let Ok(event) = self.menu_receiver.try_recv() {
+            log::log(&format!("poll_events: menu event id={:?}", event.id));
             if event.id == self.tray_menu.quit_item.id() {
-                println!("Quit requested. Exiting SteelMouse...");
+                log::log("Quit menu item clicked - exiting");
                 self.tray_icon.take();
                 std::process::exit(0);
             }

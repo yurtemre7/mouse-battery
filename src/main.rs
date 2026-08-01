@@ -5,6 +5,7 @@ mod devices;
 mod gui;
 mod hid;
 mod icon;
+mod log;
 mod menu;
 
 use clap::Parser;
@@ -87,13 +88,14 @@ fn main() {
         return;
     }
 
-    println!("Starting SteelMouse v2.1.0 (Rust)...");
+    log::init();
+    log::log(&format!("Starting SteelMouse v2.1.0 (Rust) | mock={} gui={}", args.mock, args.gui));
     if args.mock {
         println!("Running in MOCK mode!");
     }
 
     let _ = ctrlc::set_handler(move || {
-        println!("\nCtrl+C signal received. Exiting SteelMouse...");
+        log::log("Ctrl+C signal received. Exiting SteelMouse...");
         std::process::exit(0);
     });
 
