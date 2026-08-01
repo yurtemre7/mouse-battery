@@ -4,7 +4,6 @@ use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
 const CHARGING_FLAG: u8 = 0x80;
-const READ_TIMEOUT_MS: i32 = 50;
 
 #[derive(Debug, Clone)]
 pub struct BatteryInfo {
@@ -99,7 +98,7 @@ impl MouseManager {
             });
         }
 
-        // 1. Try polling existing open cached device handle (query twice back-to-back)
+        // 1. Try polling existing open cached device handle
         if let Some(active) = &self.cached_device {
             if let Some((level, is_charging)) = Self::query_device_battery(&active.device, active.kind) {
                 return Ok(BatteryInfo {
@@ -179,10 +178,10 @@ impl MouseManager {
     }
 
     fn query_device_battery(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
-        // Query 1: Send initial request to wake up mouse firmware / 2.4GHz receiver payload buffer
+        // Query 1: Wake up mouse firmware / 2.4GHz wireless receiver payload buffer
         let first = Self::query_device_battery_once(device, kind);
 
-        // 50ms pause to ensure firmware has processed the request and updated the battery register
+        // 50ms pause to allow 2.4GHz receiver to update internal register
         std::thread::sleep(std::time::Duration::from_millis(50));
 
         // Query 2: Fetch guaranteed fresh battery level
@@ -195,60 +194,100 @@ impl MouseManager {
     fn query_device_battery_once(device: &HidDevice, kind: BatteryKind) -> Option<(Option<u8>, bool)> {
         match kind {
             BatteryKind::AeroxPrime { command } => {
-                let mut req = [0u8; 64];
-                req[0] = 0x00;
-                req[1] = command;
+                let pkt_2 = [0x00, command];
+                let mut req_64 = [0u8; 64];
+                req_64[0] = 0x00;
+                req_64[1] = command;
 
-                if device.write(&req).is_err() {
-                    let mut feat_req = [0u8; 64];
-                    feat_req[0] = 0x02;
-                    feat_req[1] = command;
-                    if device.send_feature_report(&feat_req).is_err() {
-                        return None;
-                    }
+                let write_ok = device.write(&pkt_2).is_ok()
+                    || device.write(&req_64).is_ok()
+                    || device.send_feature_report(&pkt_2).is_ok()
+                    || device.send_feature_report(&[0x02, command]).is_ok();
+
+                if !write_ok {
+                    return None;
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
+                if let Ok(read_len) = device.read_timeout(&mut res, 300) {
                     if read_len >= 2 {
-                        let is_charging = (res[1] & CHARGING_FLAG) != 0;
-                        let raw_val = res[1] & !CHARGING_FLAG;
-                        let level = if raw_val > 0 {
-                            Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
-                        } else {
-                            None
-                        };
-                        return Some((level, is_charging));
+                        return Self::decode_aerox_prime_response(&res[..read_len]);
                     }
                 }
             }
             BatteryKind::Rival3Or650 => {
-                let mut req = [0u8; 64];
-                req[0] = 0x00;
-                req[1] = 0xAA;
-                req[2] = 0x01;
+                let pkt_3 = [0x00, 0xAA, 0x01];
+                let mut req_64 = [0u8; 64];
+                req_64[0] = 0x00;
+                req_64[1] = 0xAA;
+                req_64[2] = 0x01;
 
-                if device.write(&req).is_err() {
-                    let mut feat_req = [0u8; 64];
-                    feat_req[0] = 0x02;
-                    feat_req[1] = 0xAA;
-                    feat_req[2] = 0x01;
-                    if device.send_feature_report(&feat_req).is_err() {
-                        return None;
-                    }
+                let write_ok = device.write(&pkt_3).is_ok()
+                    || device.write(&req_64).is_ok()
+                    || device.send_feature_report(&pkt_3).is_ok()
+                    || device.send_feature_report(&[0x02, 0xAA, 0x01]).is_ok();
+
+                if !write_ok {
+                    return None;
                 }
 
                 let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, 500) {
-                    if read_len >= 3 {
-                        let level = Some(res[0].min(100));
-                        let is_charging = res[2] != 0;
-                        return Some((level, is_charging));
+                if let Ok(read_len) = device.read_timeout(&mut res, 400) {
+                    if read_len >= 2 {
+                        return Self::decode_rival3_650_response(&res[..read_len]);
                     }
                 }
             }
         }
         None
+    }
+
+    fn decode_aerox_prime_response(res: &[u8]) -> Option<(Option<u8>, bool)> {
+        if res.len() < 2 {
+            return None;
+        }
+
+        // Determine battery byte location:
+        // Windows hidapi includes leading Report ID 0x00 at res[0] if res.len() >= 3.
+        let battery_byte = if res[0] == 0x00 && res.len() >= 3 {
+            res[2]
+        } else if res[1] > 0 {
+            res[1]
+        } else {
+            res[0]
+        };
+
+        if battery_byte == 0 {
+            return None;
+        }
+
+        let is_charging = (battery_byte & CHARGING_FLAG) != 0;
+        let raw_val = battery_byte & !CHARGING_FLAG;
+        let level = if raw_val > 0 {
+            Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
+        } else {
+            None
+        };
+
+        Some((level, is_charging))
+    }
+
+    fn decode_rival3_650_response(res: &[u8]) -> Option<(Option<u8>, bool)> {
+        if res.is_empty() {
+            return None;
+        }
+
+        let (level_byte, charging_byte) = if res[0] == 0x00 && res.len() >= 4 {
+            (res[1], res[3])
+        } else if res.len() >= 3 {
+            (res[0], res[2])
+        } else {
+            (res[0], 0)
+        };
+
+        let level = Some(level_byte.min(100));
+        let is_charging = charging_byte != 0;
+        Some((level, is_charging))
     }
 
     fn query_generic_fallback(device: &HidDevice) -> Option<(Option<u8>, bool)> {
