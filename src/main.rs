@@ -111,11 +111,11 @@ fn main() {
                     );
 
                     if let Ok(device) = dev_info.open_device(&api) {
-                        // Drain any stale bytes first
-                        let mut drain = [0u8; 64];
-                        while device.read_timeout(&mut drain, 0).unwrap_or(0) > 0 {}
-
                         for &cmd in &[0xD2u8, 0x92u8, 0xAAu8] {
+                            // Drain buffer right before this command
+                            let mut drain = [0u8; 64];
+                            while device.read_timeout(&mut drain, 0).unwrap_or(0) > 0 {}
+
                             let mut req = [0u8; 64];
                             req[0] = 0x00;
                             req[1] = cmd;
@@ -123,18 +123,19 @@ fn main() {
                                 req[2] = 0x01;
                             }
 
-                            let write_ok = device.write(&req).is_ok()
+                            let write_ok = device.write(&[0x00, cmd]).is_ok()
+                                || device.write(&req).is_ok()
                                 || device.send_feature_report(&[0x00, cmd]).is_ok();
 
                             if write_ok {
                                 for attempt in 0..5 {
                                     let mut res = [0u8; 64];
-                                    if let Ok(n) = device.read_timeout(&mut res, 250) {
-                                        if n >= 2 {
+                                    match device.read_timeout(&mut res, 300) {
+                                        Ok(n) if n >= 2 => {
                                             let bytes_vec = res[..n].to_vec();
                                             println!(
-                                                "  Cmd 0x{:02X} attempt #{}: raw_bytes={:?}",
-                                                cmd, attempt, bytes_vec
+                                                "  Cmd 0x{:02X} attempt #{}: raw_bytes[0..8]={:?}",
+                                                cmd, attempt, &bytes_vec[..n.min(8)]
                                             );
                                             captured_fixtures.push(serde_json::json!({
                                                 "product_id": format!("0x{:04X}", pid),
@@ -145,9 +146,11 @@ fn main() {
                                                 "raw_bytes": bytes_vec,
                                             }));
                                         }
+                                        _ => break,
                                     }
                                 }
                             }
+                            std::thread::sleep(std::time::Duration::from_millis(50));
                         }
                     }
                 }
