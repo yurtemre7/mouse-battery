@@ -100,8 +100,6 @@ def generate_changelog() -> tuple[str, str]:
             header_title = current_tag_name if current_tag_name not in tags else f"{current_tag_name}-next"
             output.append(f"## [{header_title}](https://github.com/yurtemre7/steel-mouse/releases/tag/{header_title}) - {today_date}\n\n")
             
-            latest_release_notes.append(f"## ⚡ SteelMouse {header_title} Release Notes\n\n")
-
             categories = {"Features": [], "Bug Fixes": [], "Performance & Architecture": [], "Documentation & Chores": [], "Maintenance & Improvements": []}
             for c in unreleased_commits:
                 cat = categorize_commit(c["subject"])
@@ -135,7 +133,7 @@ def generate_changelog() -> tuple[str, str]:
             categories[cat].append(c)
 
         has_content = False
-        tag_notes = [f"## ⚡ SteelMouse {tag} Release Notes\n\n"]
+        tag_notes = []
         for title, emoji in [
             ("Features", "🚀"),
             ("Bug Fixes", "🐛"),
