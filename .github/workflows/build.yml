@@ -76,6 +76,10 @@ jobs:
         with:
           workspaces: "steelmouse_rust -> target"
 
+      - name: Run Unit Tests
+        run: cargo test
+        working-directory: steelmouse_rust
+
       - name: Build Release Binary
         run: cargo build --release --target x86_64-pc-windows-msvc
         working-directory: steelmouse_rust
@@ -118,6 +122,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "steelmouse_rust -> target"
+
+      - name: Run Unit Tests
+        run: cargo test
+        working-directory: steelmouse_rust
 
       - name: Build macOS Apple Silicon Binary
         run: cargo build --release --target aarch64-apple-darwin

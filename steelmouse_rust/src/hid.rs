@@ -301,3 +301,89 @@ impl MouseManager {
         Self::query_device_battery(device, BatteryKind::Rival3Or650)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_aerox_prime_windows_format() {
+        // Windows hidapi includes Report ID 0x00 at res[0]
+        // 100% discharging: res[0]=0x00, res[1]=0x15, res[2]=21 (raw 21 -> (21-1)*5 = 100%)
+        let res_100 = [0x00, 0x15, 21];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_100).expect("Should decode");
+        assert_eq!(decoded.0, Some(100));
+        assert_eq!(decoded.1, false);
+
+        // 85% discharging: res[2]=18 (raw 18 -> (18-1)*5 = 85%)
+        let res_85 = [0x00, 0x15, 18];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_85).expect("Should decode");
+        assert_eq!(decoded.0, Some(85));
+        assert_eq!(decoded.1, false);
+
+        // 50% charging: res[2] = 11 | 0x80 = 139
+        let res_50_charging = [0x00, 0x15, 11 | 0x80];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_50_charging).expect("Should decode");
+        assert_eq!(decoded.0, Some(50));
+        assert_eq!(decoded.1, true);
+
+        // N/A / OFF: res[2] = 0
+        let res_off = [0x00, 0x15, 0];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_off);
+        assert!(decoded.is_none());
+    }
+
+    #[test]
+    fn test_decode_aerox_prime_macos_format() {
+        // macOS hidapi raw payload: res[0]=0x15, res[1]=18 (85% discharging)
+        let res_85 = [0x15, 18];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_85).expect("Should decode");
+        assert_eq!(decoded.0, Some(85));
+        assert_eq!(decoded.1, false);
+
+        // macOS 50% charging: res[1] = 11 | 0x80
+        let res_50_charging = [0x15, 11 | 0x80];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_50_charging).expect("Should decode");
+        assert_eq!(decoded.0, Some(50));
+        assert_eq!(decoded.1, true);
+    }
+
+    #[test]
+    fn test_decode_rival3_650_windows_format() {
+        // Windows format: res[0]=0x00, res[1]=level, res[2]=0, res[3]=charging_flag
+        let res_75 = [0x00, 75, 0, 0];
+        let decoded = MouseManager::decode_rival3_650_response(&res_75).expect("Should decode");
+        assert_eq!(decoded.0, Some(75));
+        assert_eq!(decoded.1, false);
+
+        let res_90_charging = [0x00, 90, 0, 1];
+        let decoded = MouseManager::decode_rival3_650_response(&res_90_charging).expect("Should decode");
+        assert_eq!(decoded.0, Some(90));
+        assert_eq!(decoded.1, true);
+    }
+
+    #[test]
+    fn test_decode_rival3_650_macos_format() {
+        // macOS format: res[0]=level, res[1]=0, res[2]=charging_flag
+        let res_75 = [75, 0, 0];
+        let decoded = MouseManager::decode_rival3_650_response(&res_75).expect("Should decode");
+        assert_eq!(decoded.0, Some(75));
+        assert_eq!(decoded.1, false);
+
+        let res_90_charging = [90, 0, 1];
+        let decoded = MouseManager::decode_rival3_650_response(&res_90_charging).expect("Should decode");
+        assert_eq!(decoded.0, Some(90));
+        assert_eq!(decoded.1, true);
+    }
+
+    #[test]
+    fn test_mock_mouse_manager_progression() {
+        let mut manager = MouseManager::new(true);
+        let info1 = manager.fetch_battery().expect("Mock battery should fetch");
+        assert_eq!(info1.level, Some(84)); // starts at 85, decreases by 1
+        assert_eq!(info1.is_charging, false);
+
+        let info2 = manager.fetch_battery().expect("Mock battery should fetch");
+        assert_eq!(info2.level, Some(83));
+    }
+}

@@ -169,21 +169,21 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             name: "SteelSeries Prime",
             vendor_id: 0x1038,
             product_id: 0x182e,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x182a) => Some(MouseProfile {
             name: "SteelSeries Prime Rainbow 6 Siege Black Ice Edition",
             vendor_id: 0x1038,
             product_id: 0x182a,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x1856) => Some(MouseProfile {
             name: "SteelSeries Prime CS:GO Neo Noir Edition",
             vendor_id: 0x1038,
             product_id: 0x1856,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x184d) => Some(MouseProfile {
@@ -197,7 +197,7 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             name: "SteelSeries Prime+",
             vendor_id: 0x1038,
             product_id: 0x182c,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x1842) => Some(MouseProfile {
@@ -267,14 +267,14 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             name: "SteelSeries Rival 5",
             vendor_id: 0x1038,
             product_id: 0x183c,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x183e) => Some(MouseProfile {
             name: "SteelSeries Rival 5 Destiny Edition",
             vendor_id: 0x1038,
             product_id: 0x183e,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: None,
         }),
         (0x1038, 0x1706) => Some(MouseProfile {
@@ -477,14 +477,14 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             name: "SteelSeries Rival 650 Wireless (wired mode)",
             vendor_id: 0x1038,
             product_id: 0x172b,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: Some(BatteryKind::Rival3Or650),
         }),
         (0x1038, 0x1726) => Some(MouseProfile {
             name: "SteelSeries Rival 650 Wireless (2.4 GHz wireless mode)",
             vendor_id: 0x1038,
             product_id: 0x1726,
-            endpoint: 0,
+            endpoint: 3,
             battery_kind: Some(BatteryKind::Rival3Or650),
         }),
         (0x1038, 0x1700) => Some(MouseProfile {
@@ -565,5 +565,79 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             battery_kind: None,
         }),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_all_known_product_ids() {
+        let pids: &[u16] = &[
+            0x1836, 0x183a, 0x187a, 0x1838, 0x1878, 0x1890, 0x1892, 0x1850, 0x1854, 0x185e,
+            0x1862, 0x1852, 0x185c, 0x1860, 0x185a, 0x1876, 0x1858, 0x1874, 0x137a, 0x1366,
+            0x1378, 0x182e, 0x182a, 0x1856, 0x184d, 0x182c, 0x1842, 0x184a, 0x1840, 0x1848,
+            0x1824, 0x184c, 0x1870, 0x1830, 0x1872, 0x183c, 0x183e, 0x1706, 0x1707, 0x1704,
+            0x1708, 0x1702, 0x170a, 0x170b, 0x170c, 0x1814, 0x1729, 0x1816, 0x1384, 0x1392,
+            0x1710, 0x1712, 0x171c, 0x1394, 0x171a, 0x1716, 0x1714, 0x1718, 0x1810, 0x1720,
+            0x171e, 0x1736, 0x170e, 0x1724, 0x172e, 0x172b, 0x1726, 0x1700, 0x1730, 0x1722,
+            0x1369, 0x1362, 0x136d, 0x136f, 0x1380, 0x1390, 0x1832, 0x1834,
+        ];
+
+        for &pid in pids {
+            let prof = get_profile(0x1038, pid)
+                .unwrap_or_else(|| panic!("Profile for 0x1038:0x{:04x} not found", pid));
+            assert_eq!(prof.vendor_id, 0x1038);
+            assert_eq!(prof.product_id, pid);
+            assert!(!prof.name.is_empty(), "Name for PID 0x{:04x} is empty", pid);
+        }
+    }
+
+    #[test]
+    fn test_wireless_battery_mice_have_battery_kind() {
+        let battery_pids: &[u16] = &[
+            0x1838, // Aerox 3 Wireless 2.4GHz
+            0x1890, // Aerox 3 Gen 2 Wireless 2.4GHz
+            0x1852, // Aerox 5 Wireless 2.4GHz
+            0x1858, // Aerox 9 Wireless 2.4GHz
+            0x1840, // Prime Wireless 2.4GHz
+            0x1848, // Prime Mini Wireless 2.4GHz
+            0x1830, // Rival 3 Wireless 2.4GHz
+            0x1872, // Rival 3 Wireless Gen 2 2.4GHz
+            0x1726, // Rival 650 Wireless 2.4GHz
+        ];
+
+        for &pid in battery_pids {
+            let prof = get_profile(0x1038, pid).expect("Profile missing");
+            assert!(
+                prof.battery_kind.is_some(),
+                "PID 0x{:04x} ({}) should have battery_kind",
+                pid,
+                prof.name
+            );
+        }
+    }
+
+    #[test]
+    fn test_wired_mice_have_no_battery_kind() {
+        let wired_pids: &[u16] = &[
+            0x1824, // Rival 3
+            0x1702, // Rival 100
+            0x1710, // Rival 300
+            0x1832, // Sensei TEN
+            0x1366, // Kinzu v2
+            0x137a, // Kana v2
+        ];
+
+        for &pid in wired_pids {
+            let prof = get_profile(0x1038, pid).expect("Profile missing");
+            assert!(
+                prof.battery_kind.is_none(),
+                "PID 0x{:04x} ({}) should NOT have battery_kind",
+                pid,
+                prof.name
+            );
+        }
     }
 }
