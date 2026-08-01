@@ -67,22 +67,7 @@ impl SteelMouseApp {
 
         let egui_ctx = cc.egui_ctx.clone();
 
-        // 1. Synchronous initial battery query so tray icon and menu have immediate data
-        let mut initial_mouse_manager = MouseManager::new(mock_mode);
-        let initial_res = initial_mouse_manager.fetch_battery();
-        let initial_timestamp = Local::now().format("%H:%M:%S").to_string();
-
-        let (initial_info, is_charging, level_opt, initial_msg) = match &initial_res {
-            Ok(info) => (
-                Some(info.clone()),
-                info.is_charging,
-                info.level,
-                format!("Updated at {}", initial_timestamp),
-            ),
-            Err(err) => (None, false, None, format!("Error: {}", err)),
-        };
-
-        // Spawn background polling worker thread
+        // Spawn background polling worker thread (All HID USB operations stay off the main GUI thread)
         thread::spawn(move || {
             let mut mouse_manager = MouseManager::new(mock_mode);
 
@@ -118,21 +103,17 @@ impl SteelMouseApp {
             }
         });
 
-        let initial_icon = create_tray_icon(level_opt, is_charging, config.display_mode);
+        let initial_icon = create_tray_icon(None, false, config.display_mode);
         let tray_menu = TrayMenu::new(
-            initial_info.as_ref(),
-            Some(&initial_timestamp),
+            None,
+            None,
             config.time_delta,
             config.display_mode,
         );
 
-        let tooltip = level_opt
-            .map(|l| format!("Battery: {}%", l))
-            .unwrap_or_else(|| "SteelMouse: Scanning...".to_string());
-
         let tray_icon = TrayIconBuilder::new()
             .with_menu(Box::new(tray_menu.menu.clone()))
-            .with_tooltip(&tooltip)
+            .with_tooltip("SteelMouse: Initializing...")
             .with_icon(initial_icon)
             .build()
             .ok();
@@ -148,9 +129,9 @@ impl SteelMouseApp {
 
         Self {
             config: current_config,
-            battery_info: initial_info,
-            last_timestamp: Some(initial_timestamp),
-            status_msg: initial_msg,
+            battery_info: None,
+            last_timestamp: None,
+            status_msg: "Initializing...".to_string(),
             wake_tx,
             rx,
             tray_icon,
@@ -161,7 +142,7 @@ impl SteelMouseApp {
     }
 
     fn poll_events(&mut self, ctx: &egui::Context) {
-        // 1. Process incoming battery updates
+        // 1. Process incoming battery updates from background worker thread
         while let Ok(AppMessage::BatteryUpdated(battery_res, timestamp)) = self.rx.try_recv() {
             let (info_opt, is_charging, level_opt) = match &battery_res {
                 Ok(info) => {
