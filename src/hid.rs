@@ -1,13 +1,13 @@
 use hidapi::{DeviceInfo, HidApi, HidDevice};
 use crate::log;
 use std::fmt;
+use std::time::Duration;
 use std::collections::VecDeque;
 use chrono::{DateTime, Utc};
 use crate::devices::{self, BatteryKind};
 
 const STEELSERIES_VENDOR_ID: u16 = 0x1038;
 const CHARGING_FLAG: u8 = 0x80;
-const READ_TIMEOUT_MS: i32 = 200;
 
 #[derive(Debug, Clone)]
 pub struct BatteryInfo {
@@ -358,62 +358,78 @@ impl MouseManager {
 
         match kind {
             BatteryKind::AeroxPrime { command } => {
-                let mut req_64 = [0u8; 64];
-                req_64[0] = 0x00;
-                req_64[1] = command;
+                for write_attempt in 0..3 {
+                    let mut req_64 = [0u8; 64];
+                    req_64[0] = 0x00;
+                    req_64[1] = command;
 
-                let write_ok = device.write(&req_64).is_ok()
-                    || device.write(&[0x00, command]).is_ok()
-                    || device.send_feature_report(&[0x00, command]).is_ok();
+                    let write_ok = device.write(&req_64).is_ok()
+                        || device.write(&[0x00, command]).is_ok()
+                        || device.send_feature_report(&[0x00, command]).is_ok();
 
-                if !write_ok {
-                    log::log(&format!("AeroxPrime write failed for cmd=0x{:02X}", command));
-                    return None;
-                }
-
-                // Read up to 8 HID reports, skipping non-battery events.
-                // A valid battery response starts with:
-                //   - res[0] == command echo (e.g. 0xD2 / 210)
-                //   - OR res[0] == 0x00 and res[1] == command echo (leading Report ID 0x00)
-                let mut res = [0u8; 64];
-                for attempt in 0..8 {
-                    match device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                        Ok(n) if n >= 2 => {
-                            log::log(&format!("AeroxPrime attempt {} raw[0..8]={:?}", attempt, &res[..n.min(8)]));
-                            let is_battery_response = res[0] == command
-                                || (res[0] == 0x00 && n >= 3 && res[1] == command);
-                            if is_battery_response {
-                                if let Some(decoded) = Self::decode_aerox_prime_response(&res[..n]) {
-                                    return Some(decoded);
-                                }
-                            }
-                            log::log(&format!("  -> Skipping (res[0]=0x{:02X}, res[1]=0x{:02X})", res[0], res[1]));
-                        }
-                        Ok(0) | Err(_) => break, // Timeout or error - no more data
-                        Ok(n) => { log::log(&format!("AeroxPrime short read: {} bytes", n)); break; }
+                    if !write_ok {
+                        log::log(&format!("AeroxPrime write failed for cmd=0x{:02X} (attempt {})", command, write_attempt));
+                        continue;
                     }
+
+                    // Read up to 8 HID reports per write attempt (100ms timeout per packet).
+                    let mut res = [0u8; 64];
+                    for attempt in 0..6 {
+                        match device.read_timeout(&mut res, 100) {
+                            Ok(n) if n >= 2 => {
+                                log::log(&format!("AeroxPrime attempt {}.{} raw[0..8]={:?}", write_attempt, attempt, &res[..n.min(8)]));
+                                let is_battery_response = res[0] == command
+                                    || (res[0] == 0x00 && n >= 3 && res[1] == command);
+                                if is_battery_response {
+                                    if let Some(decoded) = Self::decode_aerox_prime_response(&res[..n]) {
+                                        return Some(decoded);
+                                    }
+                                }
+                                log::log(&format!("  -> Skipping (res[0]=0x{:02X}, res[1]=0x{:02X})", res[0], res[1]));
+                            }
+                            Ok(0) => {
+                                // 100ms read timeout - continue waiting for 2.4GHz response
+                                continue;
+                            }
+                            Ok(_) | Err(_) => break,
+                        }
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
                 }
                 None
             }
             BatteryKind::Rival3Or650 => {
-                let mut req_64 = [0u8; 64];
-                req_64[0] = 0x00;
-                req_64[1] = 0xAA;
-                req_64[2] = 0x01;
+                for _write_attempt in 0..3 {
+                    let mut req_64 = [0u8; 64];
+                    req_64[0] = 0x00;
+                    req_64[1] = 0xAA;
+                    req_64[2] = 0x01;
 
-                let write_ok = device.write(&req_64).is_ok()
-                    || device.write(&[0x00, 0xAA, 0x01]).is_ok()
-                    || device.send_feature_report(&[0x00, 0xAA, 0x01]).is_ok();
+                    let write_ok = device.write(&req_64).is_ok()
+                        || device.write(&[0x00, 0xAA, 0x01]).is_ok()
+                        || device.send_feature_report(&[0x00, 0xAA, 0x01]).is_ok();
 
-                if !write_ok {
-                    return None;
-                }
-
-                let mut res = [0u8; 64];
-                if let Ok(read_len) = device.read_timeout(&mut res, READ_TIMEOUT_MS) {
-                    if read_len >= 2 {
-                        return Self::decode_rival3_650_response(&res[..read_len]);
+                    if !write_ok {
+                        continue;
                     }
+
+                    let mut res = [0u8; 64];
+                    for _attempt in 0..6 {
+                        match device.read_timeout(&mut res, 100) {
+                            Ok(read_len) if read_len >= 2 => {
+                                let is_battery_response = res[0] == 0xAA
+                                    || (res[0] == 0x00 && read_len >= 3 && res[1] == 0xAA);
+                                if is_battery_response {
+                                    if let Some(decoded) = Self::decode_rival3_650_response(&res[..read_len]) {
+                                        return Some(decoded);
+                                    }
+                                }
+                            }
+                            Ok(0) => continue,
+                            Ok(_) | Err(_) => break,
+                        }
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
                 }
                 None
             }

@@ -2,7 +2,7 @@
 
 [Setup]
 AppName={#MyAppName}
-AppVersion=2.2.0
+AppVersion=2.2.1
 DefaultDirName={commonpf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 UninstallDisplayIcon={app}\steelmouse.exe
