@@ -7,6 +7,7 @@ use crate::hid::BatteryInfo;
 
 pub struct TrayMenu {
     pub menu: Menu,
+    pub dashboard_item: MenuItem,
     pub name_item: MenuItem,
     pub battery_item: MenuItem,
     pub status_item: MenuItem,
@@ -29,7 +30,10 @@ impl TrayMenu {
     ) -> Self {
         let menu = Menu::new();
 
-        // 1. Status Information Labels (Disabled)
+        // 1. Open GUI Dashboard Action
+        let dashboard_item = MenuItem::new("⚡ Open Dashboard Window", true, None);
+
+        // 2. Status Information Labels (Disabled)
         let name_text = battery_info
             .map(|b| format!("Name: {}", b.name))
             .unwrap_or_else(|| "Name: N/A".to_string());
@@ -58,10 +62,10 @@ impl TrayMenu {
         );
         let last_update_item = MenuItem::new(&last_update_text, false, None);
 
-        // 2. Manual Refresh Action
+        // 3. Manual Refresh Action
         let refresh_item = MenuItem::new("Refresh Now", true, None);
 
-        // 3. Interactive Refresh Interval Submenu (Static Header)
+        // 4. Interactive Refresh Interval Submenu (Static Header)
         let interval_submenu = Submenu::new("Refresh interval", true);
 
         let intervals = vec![
@@ -79,7 +83,7 @@ impl TrayMenu {
             interval_items.insert(seconds, item);
         }
 
-        // 4. Interactive Display Mode Submenu (Static Header)
+        // 5. Interactive Display Mode Submenu (Static Header)
         let mode_submenu = Submenu::new("Tray battery display", true);
         let mode_hover_item = CheckMenuItem::new(
             "Hover for percentage",
@@ -97,10 +101,12 @@ impl TrayMenu {
         mode_submenu.append(&mode_hover_item).unwrap();
         mode_submenu.append(&mode_icon_item).unwrap();
 
-        // 5. Quit Option
+        // 6. Quit Option
         let quit_item = MenuItem::new("Quit", true, None);
 
         // Build Menu Hierarchy
+        menu.append(&dashboard_item).unwrap();
+        menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&name_item).unwrap();
         menu.append(&battery_item).unwrap();
         menu.append(&status_item).unwrap();
@@ -114,6 +120,7 @@ impl TrayMenu {
 
         Self {
             menu,
+            dashboard_item,
             name_item,
             battery_item,
             status_item,
@@ -163,6 +170,7 @@ impl TrayMenu {
         ));
 
         // Re-enable interactive items & submenus
+        self.dashboard_item.set_enabled(true);
         self.refresh_item.set_enabled(true);
         self.interval_submenu.set_enabled(true);
         self.mode_submenu.set_enabled(true);
