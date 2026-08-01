@@ -10,11 +10,11 @@ OutputDir=.
 OutputBaseFilename=SteelMouse_Rust_Setup
 Compression=lzma
 SolidCompression=yes
-SetupIconFile=..\images\logo.ico
+SetupIconFile=..\steelmouse_python\images\logo.ico
 
 [Files]
-Source: "..\steelmouse_rust\target\x86_64-pc-windows-msvc\release\steelmouse.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
-Source: "..\steelmouse_rust\target\release\steelmouse.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
+Source: "..\target\x86_64-pc-windows-msvc\release\steelmouse.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
+Source: "..\target\release\steelmouse.exe"; DestDir: "{app}"; Flags: skipifsourcedoesntexist ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\steelmouse.exe"

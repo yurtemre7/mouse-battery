@@ -1,5 +1,0 @@
-# Rust build target directory
-/target/
-
-# Temporary generated files
-src/rivalcfg_devices.json

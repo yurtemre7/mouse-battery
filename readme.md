@@ -6,19 +6,20 @@
 
 ## 🌟 Key Features
 
-- **⚡ Ultra-Lightweight & Fast**: Rewritten natively in **Rust** (~2.1 MB executable, <10 MB RAM, <10 ms startup time).
+- **⚡ Ultra-Lightweight & Fast**: Written natively in **Rust** (~2.1 MB executable, <10 MB RAM, <10 ms startup time).
 - **🖥️ Cross-Platform**: Supports **Windows** (Win32 Tray) and **macOS** (Apple Silicon & Intel Menu Bar).
 - **🎨 Dual Display Modes**:
   - **Hover Mode**: Clean battery graphic indicator in system tray with percentage tooltip.
   - **Icon Mode**: Dynamic percentage numbers drawn directly onto the system tray icon.
 - **🔄 Configurable Refresh Interval**: Select refresh rate (1 min, 5 min, 10 min, 30 min, 1 hr) with instant zero-latency updates.
-- **🖱️ 76+ Devices Supported**: Includes device configurations and USB HID battery parsing rules from [`flozz/rivalcfg`](https://github.com/flozz/rivalcfg).
+- **🖱️ 78+ Devices Supported**: Includes device configurations and USB HID battery parsing rules for Aerox, Prime, and Rival series.
 
 ---
 
 ## 💻 Tested & Working Devices
 
 - SteelSeries Aerox 3 Wireless (Wired & 2.4G mode)
+- SteelSeries Aerox 3 Gen 2 Wireless (Wired & 2.4G mode)
 - SteelSeries Aerox 5 Wireless (Wired & 2.4G mode)
 - SteelSeries Aerox 9 Wireless (Wired & 2.4G mode)
 - SteelSeries Prime Wireless & Prime Mini Wireless
@@ -45,13 +46,16 @@
 
 ## 🛠️ Building from Source
 
-### Native Rust (Recommended)
+### Native Rust (Primary / Recommended)
 Requires the [Rust toolchain](https://rustup.rs/):
 
 ```bash
 # Clone the repository
 git clone https://github.com/yurtemre7/steel-mouse.git
-cd mouse-battery/steelmouse_rust
+cd steel-mouse
+
+# Run unit test suite (78+ devices & HID response decoders)
+cargo test
 
 # Run in mock testing mode
 cargo run -- --mock
@@ -60,12 +64,14 @@ cargo run -- --mock
 cargo build --release
 ```
 
-### Legacy Python Version
+### Legacy Python Version (`steelmouse_python/`)
 ```bash
+cd steelmouse_python
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Run Python script
+# Run legacy Python script
 python mouse.py
 ```
 

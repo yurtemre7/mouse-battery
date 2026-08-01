@@ -1,0 +1,648 @@
+[
+  {
+    "name": "SteelSeries Aerox 3",
+    "vendor_id": 4152,
+    "product_id": 6198,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Aerox 3 Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6202,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6266,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 3 Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6200,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6264,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5",
+    "vendor_id": 4152,
+    "product_id": 6224,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6228,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless Destiny 2 Edition (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6238,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless Diablo IV Edition (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6242,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6226,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless Destiny 2 Edition (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6236,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 5 Wireless Diablo IV Edition (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6240,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 9 Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6234,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 9 Wireless WOW Edition (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6262,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 9 Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6232,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Aerox 9 Wireless WOW Edition (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6260,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Kana v2",
+    "vendor_id": 4152,
+    "product_id": 4986,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Kinzu v2",
+    "vendor_id": 4152,
+    "product_id": 4966,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Kinzu v2",
+    "vendor_id": 4152,
+    "product_id": 4984,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime",
+    "vendor_id": 4152,
+    "product_id": 6190,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime Rainbow 6 Siege Black Ice Edition",
+    "vendor_id": 4152,
+    "product_id": 6186,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime CS:GO Neo Noir Edition",
+    "vendor_id": 4152,
+    "product_id": 6230,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime Mini",
+    "vendor_id": 4152,
+    "product_id": 6221,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime+",
+    "vendor_id": 4152,
+    "product_id": 6188,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Prime Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6210,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Prime Mini Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 6218,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      146
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Prime Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6208,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Prime Mini Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 6216,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      210
+    ],
+    "report_type": 2,
+    "family": "aerox_prime"
+  },
+  {
+    "name": "SteelSeries Rival 3",
+    "vendor_id": 4152,
+    "product_id": 6180,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 3 (firmware v0.37.0.0)",
+    "vendor_id": 4152,
+    "product_id": 6220,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 3 Gen 2",
+    "vendor_id": 4152,
+    "product_id": 6256,
+    "endpoint": 3,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 3 Wireless (2.4\u00a0GHz mode)",
+    "vendor_id": 4152,
+    "product_id": 6192,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      170,
+      1
+    ],
+    "report_type": 2,
+    "family": "rival3_650"
+  },
+  {
+    "name": "SteelSeries Rival 3 Wireless Gen 2 (2.4\u00a0GHz mode)",
+    "vendor_id": 4152,
+    "product_id": 6258,
+    "endpoint": 3,
+    "has_battery": true,
+    "command": [
+      170,
+      1
+    ],
+    "report_type": 2,
+    "family": "rival3_650"
+  },
+  {
+    "name": "SteelSeries Rival 5",
+    "vendor_id": 4152,
+    "product_id": 6204,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 5 Destiny Edition",
+    "vendor_id": 4152,
+    "product_id": 6206,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 95",
+    "vendor_id": 4152,
+    "product_id": 5894,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 95 MSI Edition",
+    "vendor_id": 4152,
+    "product_id": 5895,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 95 PC Bang",
+    "vendor_id": 4152,
+    "product_id": 5892,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 100 PC Bang",
+    "vendor_id": 4152,
+    "product_id": 5896,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 100",
+    "vendor_id": 4152,
+    "product_id": 5890,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 100 (Dell China)",
+    "vendor_id": 4152,
+    "product_id": 5898,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 100 Dota 2 Edition (retail)",
+    "vendor_id": 4152,
+    "product_id": 5899,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 100 Dota 2 Edition (Lenovo)",
+    "vendor_id": 4152,
+    "product_id": 5900,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 105",
+    "vendor_id": 4152,
+    "product_id": 6164,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 110",
+    "vendor_id": 4152,
+    "product_id": 5929,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 106",
+    "vendor_id": 4152,
+    "product_id": 6166,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival",
+    "vendor_id": 4152,
+    "product_id": 4996,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival Dota 2 Edition",
+    "vendor_id": 4152,
+    "product_id": 5010,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300",
+    "vendor_id": 4152,
+    "product_id": 5904,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 Fallout 4 Edition",
+    "vendor_id": 4152,
+    "product_id": 5906,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 Evil Geniuses Edition",
+    "vendor_id": 4152,
+    "product_id": 5916,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 CS:GO Fade Edition",
+    "vendor_id": 4152,
+    "product_id": 5012,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 CS:GO Hyper Beast Edition",
+    "vendor_id": 4152,
+    "product_id": 5914,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 CS:GO Fade Edition (stm32)",
+    "vendor_id": 4152,
+    "product_id": 5910,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 Acer Predator Edition",
+    "vendor_id": 4152,
+    "product_id": 5908,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300 HP OMEN Edition",
+    "vendor_id": 4152,
+    "product_id": 5912,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 300S",
+    "vendor_id": 4152,
+    "product_id": 6160,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 310",
+    "vendor_id": 4152,
+    "product_id": 5920,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 310 CS:GO Howl Edition",
+    "vendor_id": 4152,
+    "product_id": 5918,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 310 PUBG Edition",
+    "vendor_id": 4152,
+    "product_id": 5942,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 500",
+    "vendor_id": 4152,
+    "product_id": 5902,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 600",
+    "vendor_id": 4152,
+    "product_id": 5924,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 600 Dota 2 Edition",
+    "vendor_id": 4152,
+    "product_id": 5934,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 650 Wireless (wired mode)",
+    "vendor_id": 4152,
+    "product_id": 5931,
+    "endpoint": 0,
+    "has_battery": true,
+    "command": [
+      170,
+      1
+    ],
+    "report_type": 2,
+    "family": "rival3_650"
+  },
+  {
+    "name": "SteelSeries Rival 650 Wireless (2.4\u00a0GHz wireless mode)",
+    "vendor_id": 4152,
+    "product_id": 5926,
+    "endpoint": 0,
+    "has_battery": true,
+    "command": [
+      170,
+      1
+    ],
+    "report_type": 2,
+    "family": "rival3_650"
+  },
+  {
+    "name": "SteelSeries Rival 700",
+    "vendor_id": 4152,
+    "product_id": 5888,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Rival 710",
+    "vendor_id": 4152,
+    "product_id": 5936,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei 310",
+    "vendor_id": 4152,
+    "product_id": 5922,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW]",
+    "vendor_id": 4152,
+    "product_id": 4969,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW] Diablo III Edition",
+    "vendor_id": 4152,
+    "product_id": 4962,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW] Guild Wars 2 Edition",
+    "vendor_id": 4152,
+    "product_id": 4973,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW] CoD Black Ops II Edition",
+    "vendor_id": 4152,
+    "product_id": 4975,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW] World of Tanks Edition",
+    "vendor_id": 4152,
+    "product_id": 4992,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei [RAW] Heroes of the Storm Edition",
+    "vendor_id": 4152,
+    "product_id": 5008,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei TEN",
+    "vendor_id": 4152,
+    "product_id": 6194,
+    "endpoint": 0,
+    "has_battery": false
+  },
+  {
+    "name": "SteelSeries Sensei TEN CS:GO Neon Rider Edition",
+    "vendor_id": 4152,
+    "product_id": 6196,
+    "endpoint": 0,
+    "has_battery": false
+  }
+]

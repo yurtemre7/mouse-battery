@@ -1,7 +1,5 @@
 # Rust build artifacts
 target/
-steelmouse_rust/target/
-steelmouse_rust/src/rivalcfg_devices.json
 
 # Python virtual environment & cache
 .venv/
@@ -9,6 +7,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+steelmouse_python/.venv/
+steelmouse_python/__pycache__/
+steelmouse_python/build/
+steelmouse_python/dist/
 
 # PyInstaller & build outputs
 build/
@@ -23,6 +25,7 @@ innosetup/Output/
 # App local runtime state files
 display_mode.txt
 time_delta.txt
+config.json
 
 # OS & IDE metadata
 .DS_Store

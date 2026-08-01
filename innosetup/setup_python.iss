@@ -10,10 +10,10 @@ OutputDir=.
 OutputBaseFilename=SteelMouse_Python_Setup
 Compression=lzma
 SolidCompression=yes
-SetupIconFile=..\images\logo.ico
+SetupIconFile=..\steelmouse_python\images\logo.ico
 
 [Files]
-Source: "..\dist\mouse.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\steelmouse_python\dist\mouse.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\mouse.exe"

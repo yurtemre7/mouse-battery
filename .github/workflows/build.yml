@@ -32,10 +32,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+        working-directory: steelmouse_python
 
       - name: Build executable with PyInstaller
         run: |
           pyinstaller --onefile --noconsole --add-data images:images mouse.py
+        working-directory: steelmouse_python
 
       - name: Install Inno Setup
         run: choco install innosetup -y
@@ -74,15 +76,13 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "steelmouse_rust -> target"
+          workspaces: ". -> target"
 
       - name: Run Unit Tests
         run: cargo test
-        working-directory: steelmouse_rust
 
       - name: Build Release Binary
         run: cargo build --release --target x86_64-pc-windows-msvc
-        working-directory: steelmouse_rust
 
       - name: Install Inno Setup
         run: choco install innosetup -y
@@ -121,32 +121,28 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "steelmouse_rust -> target"
+          workspaces: ". -> target"
 
       - name: Run Unit Tests
         run: cargo test
-        working-directory: steelmouse_rust
 
       - name: Build macOS Apple Silicon Binary
         run: cargo build --release --target aarch64-apple-darwin
-        working-directory: steelmouse_rust
 
       - name: Build macOS Intel Binary
         run: cargo build --release --target x86_64-apple-darwin
-        working-directory: steelmouse_rust
 
       - name: Stage macOS Binaries
         run: |
           mkdir -p staging
           cp target/aarch64-apple-darwin/release/steelmouse staging/steelmouse-macos-arm64
           cp target/x86_64-apple-darwin/release/steelmouse staging/steelmouse-macos-x64
-        working-directory: steelmouse_rust
 
       - name: Upload macOS Separate Binaries
         uses: actions/upload-artifact@v7
         with:
           name: SteelMouse-Rust-macOS
-          path: steelmouse_rust/staging/*
+          path: staging/*
 
   release:
     name: Publish Release Artifacts
