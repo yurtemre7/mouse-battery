@@ -6,6 +6,7 @@ Generates a structured, categorized CHANGELOG.md based on git tags and commit hi
 Reads current version from Cargo.toml.
 """
 
+import datetime
 import os
 import re
 import sys
@@ -78,30 +79,46 @@ def format_section(title: str, emoji: str, commits: list[dict]) -> str:
     lines.append("")
     return "\n".join(lines)
 
-def generate_changelog() -> str:
+def generate_changelog() -> tuple[str, str]:
     cargo_version = get_current_cargo_version()
+    current_tag_name = f"v{cargo_version}"
+    today_date = datetime.date.today().isoformat()
     tags = get_tags()
 
     output = []
-    output.append("# ⚡ SteelMouse Changelog\n")
-    output.append(f"> **Current Version:** `v{cargo_version}`  \n")
+    output.append("# ⚡ SteelMouse Changelog\n\n")
+    output.append(f"> **Current Version:** `{current_tag_name}`  \n")
     output.append("> All notable changes to SteelMouse are automatically documented in this file based on release tags and git commit history.\n\n")
 
-    # If there are unreleased commits after the latest tag
+    latest_release_notes = []
+
+    # Handle commits on HEAD since latest tag
     if tags:
-        unreleased_commits = get_commits_between(tags[0], "HEAD")
+        latest_tag = tags[0]
+        unreleased_commits = get_commits_between(latest_tag, "HEAD")
         if unreleased_commits:
-            output.append(f"## 🛠 Unreleased (`HEAD`)\n")
+            header_title = current_tag_name if current_tag_name not in tags else f"{current_tag_name}-next"
+            output.append(f"## [{header_title}](https://github.com/yurtemre7/steel-mouse/releases/tag/{header_title}) - {today_date}\n\n")
+            
+            latest_release_notes.append(f"## ⚡ SteelMouse {header_title} Release Notes\n\n")
+
             categories = {"Features": [], "Bug Fixes": [], "Performance & Architecture": [], "Documentation & Chores": [], "Maintenance & Improvements": []}
             for c in unreleased_commits:
                 cat = categorize_commit(c["subject"])
                 categories[cat].append(c)
-            
-            output.append(format_section("Features", "🚀", categories["Features"]))
-            output.append(format_section("Bug Fixes", "🐛", categories["Bug Fixes"]))
-            output.append(format_section("Performance & Architecture", "⚡", categories["Performance & Architecture"]))
-            output.append(format_section("Documentation & Chores", "📝", categories["Documentation & Chores"]))
-            output.append(format_section("Maintenance & Improvements", "🔧", categories["Maintenance & Improvements"]))
+
+            for title, emoji in [
+                ("Features", "🚀"),
+                ("Bug Fixes", "🐛"),
+                ("Performance & Architecture", "⚡"),
+                ("Documentation & Chores", "📝"),
+                ("Maintenance & Improvements", "🔧"),
+            ]:
+                sec = format_section(title, emoji, categories[title])
+                if sec:
+                    output.append(sec)
+                    latest_release_notes.append(sec)
+
             output.append("---\n\n")
 
     # Group commits tag by tag
@@ -110,7 +127,7 @@ def generate_changelog() -> str:
         prev_tag = tags[i + 1] if i + 1 < len(tags) else ""
         commits = get_commits_between(prev_tag, tag)
 
-        output.append(f"## [{tag}](https://github.com/yurtemre7/steel-mouse/releases/tag/{tag}) - {tag_date}\n")
+        output.append(f"## [{tag}](https://github.com/yurtemre7/steel-mouse/releases/tag/{tag}) - {tag_date}\n\n")
         
         categories = {"Features": [], "Bug Fixes": [], "Performance & Architecture": [], "Documentation & Chores": [], "Maintenance & Improvements": []}
         for c in commits:
@@ -118,6 +135,7 @@ def generate_changelog() -> str:
             categories[cat].append(c)
 
         has_content = False
+        tag_notes = [f"## ⚡ SteelMouse {tag} Release Notes\n\n"]
         for title, emoji in [
             ("Features", "🚀"),
             ("Bug Fixes", "🐛"),
@@ -128,6 +146,7 @@ def generate_changelog() -> str:
             sec = format_section(title, emoji, categories[title])
             if sec:
                 output.append(sec)
+                tag_notes.append(sec)
                 has_content = True
 
         if not has_content:
@@ -135,13 +154,23 @@ def generate_changelog() -> str:
 
         output.append("---\n\n")
 
-    return "".join(output)
+        if not latest_release_notes and i == 0:
+            latest_release_notes = tag_notes
+
+    full_changelog = "".join(output)
+    release_notes = "".join(latest_release_notes)
+    return full_changelog, release_notes
 
 def main():
-    changelog_content = generate_changelog()
+    changelog_content, release_notes_content = generate_changelog()
+    
     output_path = Path("CHANGELOG.md")
     output_path.write_text(changelog_content, encoding="utf-8")
-    print(f"✅ CHANGELOG.md successfully generated with version v{get_current_cargo_version()}!")
+    print(f"✅ CHANGELOG.md successfully updated for v{get_current_cargo_version()}!")
+
+    notes_path = Path("RELEASE_NOTES.md")
+    notes_path.write_text(release_notes_content, encoding="utf-8")
+    print(f"✅ RELEASE_NOTES.md generated for GitHub Release page!")
 
 if __name__ == "__main__":
     main()

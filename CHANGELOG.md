@@ -1,14 +1,24 @@
 # ⚡ SteelMouse Changelog
+
 > **Current Version:** `v2.3.0`  
 > All notable changes to SteelMouse are automatically documented in this file based on release tags and git commit history.
 
+## [v2.3.0-next](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.0-next) - 2026-08-01
+
+### 🚀 Features
+
+- docs: add CHANGELOG.md and generator script ([`7f99ef4`](https://github.com/yurtemre7/steel-mouse/commit/7f99ef4))
+---
+
 ## [v2.3.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.3.0) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.3.0 (decoupled steelmouse::protocol engine into standalone Rust library & crate) ([`d9f20cd`](https://github.com/yurtemre7/steel-mouse/commit/d9f20cd))
 ---
 
 ## [v2.2.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.2.1) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.2.1 (multi-pass write & read retry loop for 2.4GHz wireless stability) ([`61a9d27`](https://github.com/yurtemre7/steel-mouse/commit/61a9d27))
@@ -18,18 +28,21 @@
 ---
 
 ## [v2.2.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.2.0) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.2.0 (pure native tao system tray app without egui window) ([`14c54b8`](https://github.com/yurtemre7/steel-mouse/commit/14c54b8))
 ---
 
 ## [v2.1.4](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.1.4) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.1.4 (pure system tray monitor, removed GUI window) ([`520cf50`](https://github.com/yurtemre7/steel-mouse/commit/520cf50))
 ---
 
 ## [v2.1.3](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.1.3) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.1.3 ([`3a40dbd`](https://github.com/yurtemre7/steel-mouse/commit/3a40dbd))
@@ -40,12 +53,14 @@
 ---
 
 ## [v2.1.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.1.2) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.1.2 ([`d824c9e`](https://github.com/yurtemre7/steel-mouse/commit/d824c9e))
 ---
 
 ## [v2.1.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.1.1) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.1.1 ([`c7063e4`](https://github.com/yurtemre7/steel-mouse/commit/c7063e4))
@@ -68,6 +83,7 @@
 ---
 
 ## [v2.1.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.1.0) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.1.0 ([`ade39db`](https://github.com/yurtemre7/steel-mouse/commit/ade39db))
@@ -83,6 +99,7 @@
 ---
 
 ## [v2.0.7](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.7) - 2026-08-01
+
 ### 🚀 Features
 
 - release: v2.0.7 ([`f7c8f0e`](https://github.com/yurtemre7/steel-mouse/commit/f7c8f0e))
@@ -96,12 +113,14 @@
 ---
 
 ## [v2.0.6](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.6) - 2026-07-30
+
 ### 🚀 Features
 
 - release: v2.0.6 ([`11b9bad`](https://github.com/yurtemre7/steel-mouse/commit/11b9bad))
 ---
 
 ## [v2.0.5](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.5) - 2026-07-30
+
 ### 🚀 Features
 
 - release: v2.0.5 ([`4e88d78`](https://github.com/yurtemre7/steel-mouse/commit/4e88d78))
@@ -114,6 +133,7 @@
 ---
 
 ## [v2.0.3](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.3) - 2026-07-30
+
 ### 🚀 Features
 
 - Add concurrency cancel-in-progress to cancel outdated workflow runs ([`b5c5cee`](https://github.com/yurtemre7/steel-mouse/commit/b5c5cee))
@@ -126,11 +146,13 @@
 ---
 
 ## [v2.0.2-fixWindowsHIDbatterybyteoffsetindex](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.2-fixWindowsHIDbatterybyteoffsetindex) - 2026-07-30
+
 _No detailed commit log for this release._
 
 ---
 
 ## [v2.0.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.2) - 2026-07-30
+
 ### 🚀 Features
 
 - Add concurrency cancel-in-progress to cancel outdated workflow runs ([`b5c5cee`](https://github.com/yurtemre7/steel-mouse/commit/b5c5cee))
@@ -149,24 +171,28 @@ _No detailed commit log for this release._
 ---
 
 ## [v2.0.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.1) - 2026-07-30
+
 ### 🐛 Bug Fixes
 
 - Fix Windows HID interface matching and report ID parsing for battery detection ([`28387f1`](https://github.com/yurtemre7/steel-mouse/commit/28387f1))
 ---
 
 ## [v2.0.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v2.0.0) - 2026-07-30
+
 ### 🚀 Features
 
 - Add native Rust implementation with 76+ rivalcfg mouse profiles, macOS support, and multi-build CI workflow ([`d958ea4`](https://github.com/yurtemre7/steel-mouse/commit/d958ea4))
 ---
 
 ## [v1.3.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.3.2) - 2026-06-15
+
 ### 🚀 Features
 
 - feat: update github actions ([`e3b90c9`](https://github.com/yurtemre7/steel-mouse/commit/e3b90c9))
 ---
 
 ## [v1.3.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.3.1) - 2026-06-15
+
 ### 🚀 Features
 
 - feat: update packages and migrate getdata to get_flattened_data ([`87bfaa8`](https://github.com/yurtemre7/steel-mouse/commit/87bfaa8))
@@ -174,6 +200,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.3.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.3.0) - 2026-03-07
+
 ### 🚀 Features
 
 - feat: add mock mouse class ([`ce37189`](https://github.com/yurtemre7/steel-mouse/commit/ce37189))
@@ -198,6 +225,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.2.4](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.2.4) - 2026-02-24
+
 ### 🚀 Features
 
 - add building ([`4ec31e4`](https://github.com/yurtemre7/steel-mouse/commit/4ec31e4))
@@ -215,12 +243,14 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.2.3](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.2.3) - 2025-12-28
+
 ### 🔧 Maintenance & Improvements
 
 - update version ([`d5821c1`](https://github.com/yurtemre7/steel-mouse/commit/d5821c1))
 ---
 
 ## [v1.2.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.2.2) - 2025-12-28
+
 ### 🔧 Maintenance & Improvements
 
 - init release with version ([`a49fab5`](https://github.com/yurtemre7/steel-mouse/commit/a49fab5))
@@ -230,6 +260,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.2.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.2.1) - 2025-08-14
+
 ### 🚀 Features
 
 - add uv ([`d18b3fd`](https://github.com/yurtemre7/steel-mouse/commit/d18b3fd))
@@ -251,6 +282,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.2.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.2.0) - 2025-05-26
+
 ### 🚀 Features
 
 - add default 5 mins time_delta ([`fa328ac`](https://github.com/yurtemre7/steel-mouse/commit/fa328ac))
@@ -265,6 +297,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.1.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.1.2) - 2025-01-21
+
 ### 🚀 Features
 
 - update version of rivalcfg to support new devices ([`0300ce1`](https://github.com/yurtemre7/steel-mouse/commit/0300ce1))
@@ -276,6 +309,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.1.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.1.1) - 2024-06-07
+
 ### 🚀 Features
 
 - add battery charging / dis-charging to tray icon and menu + reduce app refresh timer from 10min to 1min ([`a08a4ec`](https://github.com/yurtemre7/steel-mouse/commit/a08a4ec))
@@ -289,6 +323,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.1.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.1.0) - 2024-05-20
+
 ### 🔧 Maintenance & Improvements
 
 - update rivalcfg package ([`da09c25`](https://github.com/yurtemre7/steel-mouse/commit/da09c25))
@@ -296,6 +331,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.0.3](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.0.3) - 2024-03-08
+
 ### 🚀 Features
 
 - add new contributor ([`eb49285`](https://github.com/yurtemre7/steel-mouse/commit/eb49285))
@@ -304,6 +340,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.0.2](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.0.2) - 2024-01-24
+
 ### 🚀 Features
 
 - Add check for running mouse.exe process ([`be6ee58`](https://github.com/yurtemre7/steel-mouse/commit/be6ee58))
@@ -327,6 +364,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.0.1](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.0.1) - 2024-01-24
+
 ### 🐛 Bug Fixes
 
 - hotfix ([`906c2f4`](https://github.com/yurtemre7/steel-mouse/commit/906c2f4))
@@ -337,6 +375,7 @@ _No detailed commit log for this release._
 ---
 
 ## [v1.0.0](https://github.com/yurtemre7/steel-mouse/releases/tag/v1.0.0) - 2024-01-20
+
 ### 🚀 Features
 
 - update for new release ([`deffdb7`](https://github.com/yurtemre7/steel-mouse/commit/deffdb7))

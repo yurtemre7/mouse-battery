@@ -169,6 +169,9 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "Using release tag: $TAG_NAME"
 
+      - name: Generate Release Notes & Changelog
+        run: python scripts/generate_changelog.py
+
       - name: Download all build artifacts
         uses: actions/download-artifact@v8
         with:
@@ -181,6 +184,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.release_tag.outputs.tag_name }}
-          body: "Release including both Rust (recommended) and Python builds for SteelMouse."
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           files: release-artifacts/*
