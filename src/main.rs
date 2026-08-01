@@ -92,6 +92,11 @@ fn main() {
         println!("Running in MOCK mode!");
     }
 
+    let _ = ctrlc::set_handler(move || {
+        println!("\nCtrl+C signal received. Exiting SteelMouse...");
+        std::process::exit(0);
+    });
+
     let mut viewport = eframe::egui::ViewportBuilder::default()
         .with_inner_size([440.0, 420.0])
         .with_resizable(false);
