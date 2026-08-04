@@ -120,11 +120,12 @@ pub fn run_tray_app(mock_mode: bool) {
             m.mode_hover_item.id().clone(),
             m.mode_icon_item.id().clone(),
             m.autostart_item.id().clone(),
+            m.export_diag_item.id().clone(),
             m.interval_items.iter().map(|(&s, i)| (s, i.id().clone())).collect::<Vec<_>>(),
         )
     };
 
-    let (quit_id, refresh_id, hover_id, icon_id, autostart_id, interval_ids) = tray_menu_ids;
+    let (quit_id, refresh_id, hover_id, icon_id, autostart_id, export_diag_id, interval_ids) = tray_menu_ids;
 
     event_loop.run(move |_event, _, control_flow| {
         *control_flow = ControlFlow::WaitUntil(
@@ -176,6 +177,17 @@ pub fn run_tray_app(mock_mode: bool) {
                 log::log(&format!("Autostart toggled -> {}", target_state));
                 let _ = crate::autostart::set_autostart(target_state);
                 m.autostart_item.set_checked(target_state);
+            } else if event.id == export_diag_id {
+                log::log("Export Diagnostics clicked");
+                std::thread::spawn(|| {
+                    match crate::protocol::recorder::save_diagnostic_file(None) {
+                        Ok(p) => {
+                            log::log(&format!("Exported diagnostic report to {}", p.display()));
+                            crate::protocol::recorder::open_file_in_file_manager(&p);
+                        }
+                        Err(e) => log::log(&format!("Failed to export diagnostic report: {}", e)),
+                    }
+                });
             } else {
                 let mut cfg = current_config.lock().unwrap().clone();
                 let mut changed = false;

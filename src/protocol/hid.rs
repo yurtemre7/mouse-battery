@@ -240,7 +240,8 @@ impl MouseManager {
         while device.read_timeout(&mut drain_buf, 0).unwrap_or(0) > 0 {}
 
         match kind {
-            BatteryKind::AeroxPrime { command } => {
+            BatteryKind::AeroxPrime { command } | BatteryKind::DirectAerox { command } => {
+                let is_direct = matches!(kind, BatteryKind::DirectAerox { .. });
                 for write_attempt in 0..3 {
                     let mut req_64 = [0u8; 64];
                     req_64[0] = 0x00;
@@ -251,7 +252,7 @@ impl MouseManager {
                         || device.send_feature_report(&[0x00, command]).is_ok();
 
                     if !write_ok {
-                        log::log(&format!("AeroxPrime write failed for cmd=0x{:02X} (attempt {})", command, write_attempt));
+                        log::log(&format!("Aerox write failed for cmd=0x{:02X} (attempt {})", command, write_attempt));
                         continue;
                     }
 
@@ -260,12 +261,17 @@ impl MouseManager {
                     for attempt in 0..6 {
                         match device.read_timeout(&mut res, 100) {
                             Ok(n) if n >= 2 => {
-                                log::log(&format!("AeroxPrime attempt {}.{} raw[0..8]={:?}", write_attempt, attempt, &res[..n.min(8)]));
+                                log::log(&format!("Aerox attempt {}.{} raw[0..8]={:?}", write_attempt, attempt, &res[..n.min(8)]));
                                 let is_battery_response = res[0] == command
                                     || (res[0] == 0x00 && n >= 3 && res[1] == command);
                                 if is_battery_response {
-                                    if let Some(decoded) = Self::decode_aerox_prime_response(&res[..n]) {
-                                        return Some(decoded);
+                                    let decoded = if is_direct {
+                                        Self::decode_direct_aerox_response(&res[..n])
+                                    } else {
+                                        Self::decode_aerox_prime_response(&res[..n])
+                                    };
+                                    if let Some(d) = decoded {
+                                        return Some(d);
                                     }
                                 }
                                 log::log(&format!("  -> Skipping (res[0]=0x{:02X}, res[1]=0x{:02X})", res[0], res[1]));
@@ -343,13 +349,42 @@ impl MouseManager {
 
         let is_charging = (battery_byte & CHARGING_FLAG) != 0;
         let raw_val = battery_byte & !CHARGING_FLAG;
-        let level = if raw_val > 0 {
+        let level = if raw_val > 21 {
+            Some(raw_val.min(100))
+        } else if raw_val > 0 {
             Some(((raw_val.saturating_sub(1)) as u16 * 5).min(100) as u8)
         } else {
             None
         };
 
         log::log(&format!("decode_aerox_prime: battery_byte=0x{:02X} raw_val={} level={:?} charging={}", battery_byte, raw_val, level, is_charging));
+        Some((level, is_charging))
+    }
+
+    fn decode_direct_aerox_response(res: &[u8]) -> Option<(Option<u8>, bool)> {
+        if res.len() < 2 {
+            return None;
+        }
+
+        let battery_byte = if res.len() >= 4 && res[0] == 0x00 && res[2] == 0x00 {
+            res[3]
+        } else if res.len() >= 3 && res[1] == 0x00 {
+            res[2]
+        } else if res.len() >= 3 && res[0] == 0x00 {
+            res[2]
+        } else {
+            res[1]
+        };
+
+        if battery_byte == 0 {
+            return None;
+        }
+
+        let is_charging = (battery_byte & CHARGING_FLAG) != 0;
+        let raw_val = battery_byte & !CHARGING_FLAG;
+        let level = Some(raw_val.min(100));
+
+        log::log(&format!("decode_direct_aerox: battery_byte=0x{:02X} raw_val={} level={:?} charging={}", battery_byte, raw_val, level, is_charging));
         Some((level, is_charging))
     }
 
@@ -372,6 +407,9 @@ impl MouseManager {
     }
 
     fn query_generic_fallback(device: &HidDevice) -> Option<(Option<u8>, bool)> {
+        if let Some(res) = Self::query_device_battery(device, BatteryKind::DirectAerox { command: 0xD2 }) {
+            return Some(res);
+        }
         if let Some(res) = Self::query_device_battery(device, BatteryKind::AeroxPrime { command: 0xD2 }) {
             return Some(res);
         }
@@ -412,6 +450,25 @@ mod tests {
         let decoded = MouseManager::decode_aerox_prime_response(&res_windows_direct).expect("Should decode direct echo format");
         assert_eq!(decoded.0, Some(85));
         assert_eq!(decoded.1, false);
+
+        // Fallback test for direct percentage > 21 (e.g. 72%) on AeroxPrime decoder
+        let res_72_direct = [210u8, 72, 0, 0, 0, 0, 0, 0];
+        let decoded = MouseManager::decode_aerox_prime_response(&res_72_direct).expect("Should decode direct percentage fallback");
+        assert_eq!(decoded.0, Some(72));
+        assert_eq!(decoded.1, false);
+    }
+
+    #[test]
+    fn test_decode_direct_aerox() {
+        let res_72 = [210u8, 72, 0, 0, 0, 0, 0, 0];
+        let decoded = MouseManager::decode_direct_aerox_response(&res_72).expect("Should decode 72%");
+        assert_eq!(decoded.0, Some(72));
+        assert_eq!(decoded.1, false);
+
+        let res_72_charging = [210u8, 72 | 0x80, 0, 0, 0, 0, 0, 0];
+        let decoded = MouseManager::decode_direct_aerox_response(&res_72_charging).expect("Should decode 72% charging");
+        assert_eq!(decoded.0, Some(72));
+        assert_eq!(decoded.1, true);
     }
 
     #[test]

@@ -14,5 +14,6 @@ pub mod menu;
 pub mod protocol;
 
 pub use protocol::{
-    get_profile, BatteryInfo, BatteryKind, BatterySample, BatteryTracker, MouseManager, MouseProfile,
+    get_profile, open_file_in_file_manager, run_diagnostic, save_diagnostic_file, BatteryInfo,
+    BatteryKind, BatterySample, BatteryTracker, MouseManager, MouseProfile,
 };

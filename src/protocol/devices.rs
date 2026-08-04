@@ -10,8 +10,10 @@ pub struct MouseProfile {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BatteryKind {
-    /// Command 0x92 (146) or 0xD2 (210) - Aerox 3/5/9, Prime / Prime Mini
+    /// Command 0x92 (146) or 0xD2 (210) - Aerox 3/5/9, Prime / Prime Mini (1..21 scale)
     AeroxPrime { command: u8 },
+    /// Command 0x92 or 0xD2 with direct 0..100% percentage byte - Aerox 3 Gen 2
+    DirectAerox { command: u8 },
     /// Command [0xAA, 0x01] (170, 1) - Rival 3 Wireless, Rival 650
     Rival3Or650,
 }
@@ -40,14 +42,14 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
         }),
         (0x1038, 0x1838) => Some(MouseProfile {
-            name: "SteelSeries Aerox 3 Wireless (2.4 GHz wireless mode)",
+            name: "SteelSeries Aerox 3 Wireless (2.4 GHz wireless mode)",
             vendor_id: 0x1038,
             product_id: 0x1838,
             endpoint: 3,
             battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
         }),
         (0x1038, 0x1878) => Some(MouseProfile {
-            name: "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (2.4 GHz wireless mode)",
+            name: "SteelSeries Aerox 3 Wireless CS2 Dragon Lore Edition (2.4 GHz wireless mode)",
             vendor_id: 0x1038,
             product_id: 0x1878,
             endpoint: 3,
@@ -58,14 +60,14 @@ pub fn get_profile(vendor_id: u16, product_id: u16) -> Option<MouseProfile> {
             vendor_id: 0x1038,
             product_id: 0x1890,
             endpoint: 3,
-            battery_kind: Some(BatteryKind::AeroxPrime { command: 0xD2 }),
+            battery_kind: Some(BatteryKind::DirectAerox { command: 0xD2 }),
         }),
         (0x1038, 0x1892) => Some(MouseProfile {
             name: "SteelSeries Aerox 3 Gen 2 Wireless (wired mode)",
             vendor_id: 0x1038,
             product_id: 0x1892,
             endpoint: 3,
-            battery_kind: Some(BatteryKind::AeroxPrime { command: 0x92 }),
+            battery_kind: Some(BatteryKind::DirectAerox { command: 0x92 }),
         }),
         (0x1038, 0x1850) => Some(MouseProfile {
             name: "SteelSeries Aerox 5",

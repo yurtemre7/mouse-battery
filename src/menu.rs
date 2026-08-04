@@ -18,6 +18,7 @@ pub struct TrayMenu {
     pub mode_hover_item: CheckMenuItem,
     pub mode_icon_item: CheckMenuItem,
     pub autostart_item: CheckMenuItem,
+    pub export_diag_item: MenuItem,
     pub quit_item: MenuItem,
 }
 
@@ -101,7 +102,10 @@ impl TrayMenu {
         let is_autostart = crate::autostart::is_autostart_enabled();
         let autostart_item = CheckMenuItem::new("Start Automatically on Login", true, is_autostart, None);
 
-        // 6. Quit Option
+        // 6. Diagnostic Export Option
+        let export_diag_item = MenuItem::new("📋 Export Mouse Diagnostics (JSON)", true, None);
+
+        // 7. Quit Option
         let quit_item = MenuItem::new("Quit", true, None);
 
         // Build Menu Hierarchy
@@ -114,6 +118,7 @@ impl TrayMenu {
         menu.append(&interval_submenu).unwrap();
         menu.append(&mode_submenu).unwrap();
         menu.append(&autostart_item).unwrap();
+        menu.append(&export_diag_item).unwrap();
         menu.append(&PredefinedMenuItem::separator()).unwrap();
         menu.append(&quit_item).unwrap();
 
@@ -130,6 +135,7 @@ impl TrayMenu {
             mode_hover_item,
             mode_icon_item,
             autostart_item,
+            export_diag_item,
             quit_item,
         }
     }

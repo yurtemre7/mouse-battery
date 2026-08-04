@@ -24,12 +24,33 @@ struct Args {
     dump_hid: bool,
 
     /// Record live mouse HID responses and generate Rust test fixtures
-    #[arg(short, long)]
+    #[arg(short = 'f', long)]
     record_fixture: bool,
+
+    /// Record mouse HID diagnostic data and export JSON report for new/unsupported mice
+    #[arg(short, long, num_args = 0..=1, value_name = "FILE")]
+    record: Option<Option<std::path::PathBuf>>,
 }
 
 fn main() {
     let args = Args::parse();
+
+    if let Some(path_opt) = &args.record {
+        println!("=== SteelMouse Hardware Diagnostic Recorder ===");
+        let custom_path = path_opt.as_ref().map(|p| p.as_path());
+        match protocol::recorder::save_diagnostic_file(custom_path) {
+            Ok(saved_path) => {
+                println!("\n✅ Successfully exported diagnostic report!");
+                println!("📁 File: {}", saved_path.display());
+                println!("\n💡 To request support for a new mouse, attach this JSON file to a GitHub issue:");
+                println!("🔗 https://github.com/yurtemre7/steel-mouse/issues/new");
+            }
+            Err(e) => {
+                eprintln!("\n❌ Diagnostic recording failed: {}", e);
+            }
+        }
+        return;
+    }
 
     if args.dump_hid {
         println!("=== SteelMouse HID Diagnostic Dump ===");
@@ -174,7 +195,7 @@ fn main() {
     }
 
     log::init();
-    log::log(&format!("Starting SteelMouse v2.4.0 (Rust System Tray) | mock={}", args.mock));
+    log::log(&format!("Starting SteelMouse v2.5.0 (Rust System Tray) | mock={}", args.mock));
     if args.mock {
         println!("Running in MOCK mode!");
     }
